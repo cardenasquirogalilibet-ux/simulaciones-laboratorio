@@ -1,0 +1,1504 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab Simulation Lilibet</title>
+<style>
+:root{--bg:#08141f;--panel:#0e2233;--panel2:#0a1a28;--ink:#eef6fa;--mut:#9fb9c8;--line:#27506a;--cy:#43dcff;--gr:#a6e66a;--or:#ffb85c;--pk:#ff72bb}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+.app{max-width:1300px;margin:auto;padding:22px 18px 40px}
+h1{font-size:clamp(26px,3.6vw,40px);line-height:1.08;margin:0 0 6px;letter-spacing:-.01em}
+h2{font-size:18.5px;margin:0 0 8px}h3{font-size:15px;margin:0 0 6px}p{margin:.4em 0}
+.lead{color:var(--mut);max-width:820px}.mut,.small{color:var(--mut)}.small{font-size:13px}
+.nav-radio{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:20px 0 16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+nav button,nav label{background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:manipulation;display:inline-block}
+nav button.on,nav label.on{color:var(--ink);border-color:var(--cy)}
+:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+.page{display:none}.page.on{display:block}
+#tab_inicio:checked ~ main #inicio,
+#tab_preparacion:checked ~ main #preparacion,
+#tab_medicion:checked ~ main #medicion,
+#tab_analisis:checked ~ main #analisis,
+#tab_criterios:checked ~ main #criterios{display:block}
+#tab_inicio:checked ~ nav label[for="tab_inicio"],
+#tab_preparacion:checked ~ nav label[for="tab_preparacion"],
+#tab_medicion:checked ~ nav label[for="tab_medicion"],
+#tab_analisis:checked ~ nav label[for="tab_analisis"],
+#tab_criterios:checked ~ nav label[for="tab_criterios"]{color:var(--ink);border-color:var(--cy)}
+.grid,.two{display:grid;gap:16px;margin-bottom:16px}
+.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.two{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}.two.a{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form label,.inl{display:grid;gap:4px;color:var(--mut);font-size:13px}
+input,select{padding:8px 9px;border-radius:7px;border:1px solid #3a6784;background:#06121d;color:var(--ink);font:inherit;min-width:0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:end}
+.btn{border:1px solid var(--line);background:#143349;color:var(--ink);border-radius:8px;padding:8px 13px;font:inherit;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn:hover:not(:disabled){background:#1b4360;border-color:#4b88ad}
+.btn.pri{background:var(--cy);border-color:var(--cy);color:#04202b}
+.btn.pri:hover:not(:disabled){background:#6be4ff}
+.btn.warn{border-color:var(--or);color:var(--or)}
+.btn.ok{border-color:var(--gr);color:var(--gr)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.note{border-left:3px solid var(--or);background:#2a2214;padding:10px 12px;border-radius:0 8px 8px 0;color:#ffe2b0;font-size:13px;margin:10px 0}
+.note.bad{border-color:var(--pk);background:#2c1522;color:#ffc4e0}
+.note.good{border-color:var(--gr);background:#112a1d;color:#c8f7a6}
+.eq{font:600 22px Georgia,serif;margin:10px 0;color:var(--cy)}
+.stage{background:radial-gradient(ellipse at 50% 0,#17465c,#091724 72%);border:1px solid var(--line);border-radius:10px;padding:6px;position:relative;overflow:hidden}
+#bench,#specSvg{width:100%;height:auto;display:block}
+#bench{max-height:330px;margin:0 auto}
+.bench{fill:#243949}.glass{fill:#bfe6ef1c;stroke:#c6e6ee;stroke-width:2}.mark{stroke:#e85227;stroke-width:2}
+.lb{fill:var(--ink);font:700 12.5px system-ui;text-anchor:middle}.lc{fill:var(--mut);font:11px system-ui;text-anchor:middle}
+.bt{fill:#173040;font:700 10px system-ui;text-anchor:middle}
+.liq{transform-box:fill-box;transform-origin:50% 100%;transition:transform .75s ease,opacity .75s}
+#techArm{transition:transform .7s cubic-bezier(.22,.61,.36,1)}
+#handCarrier{transition:transform .65s cubic-bezier(.22,.61,.36,1),opacity .3s}
+@media(prefers-reduced-motion:reduce){.liq,#techArm,#handCarrier{transition:none!important}}
+.tb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13.5px}
+.tb th,.tb td{padding:7px 6px;border-bottom:1px solid #1f4257;text-align:right}.tb th:first-child,.tb td:first-child{text-align:left}
+.tb th{color:var(--mut);font-weight:600}.tb input{width:76px;text-align:right;padding:5px 6px}.ok{color:var(--gr)}.scroll{overflow-x:auto}
+.tb tr.active-row{background:#15364d99}
+.lcd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;background:#04101a;border:1px solid var(--line);border-radius:9px;padding:10px;margin:10px 0}
+.lcd-cell{padding:6px 10px;border-radius:6px;background:#071826;border:1px solid #173a52}
+.lcd-cell small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.lcd-cell strong{font:700 20px/1.15 ui-monospace,Consolas,monospace;color:var(--gr);display:block;margin-top:2px}
+.lcd-cell strong.cy{color:var(--cy)}.lcd-cell strong.or{color:var(--or)}
+.lcd-cell span{font-size:11.5px;color:var(--mut)}
+.cuv-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px;background:var(--panel2);border:1px solid #1f4257;border-radius:9px;padding:12px;margin:10px 0}
+.cuv-box{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--mut)}
+.cuv-box b{color:var(--ink);font-size:13px;display:flex;align-items:center;justify-content:space-between}
+.badge{font-size:11px;padding:2px 7px;border-radius:99px;font-weight:600;border:1px solid var(--line)}
+.badge.ok{color:var(--gr);border-color:var(--gr);background:#123322}
+.badge.bad{color:var(--pk);border-color:var(--pk);background:#331225}
+.badge.warn{color:var(--or);border-color:var(--or);background:#332612}
+.rack-bar{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;align-items:center}
+.rack-btn{flex:1;min-width:95px;padding:7px 8px;border-radius:7px;border:1px solid var(--line);background:#0b1e2d;color:var(--ink);font:600 12.5px system-ui;cursor:pointer;text-align:center;transition:all .15s}
+.rack-btn small{display:block;font-weight:400;font-size:11px;color:var(--mut)}
+.rack-btn:hover{border-color:var(--cy);background:#133147}
+.rack-btn.sel{border-color:var(--cy);background:#143d59;box-shadow:0 0 0 1px var(--cy)}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metric{background:var(--panel2);border:1px solid #1f4257;border-radius:8px;padding:9px 11px}
+.metric small{display:block;color:var(--mut)}.metric strong{font-size:18px;font-variant-numeric:tabular-nums}.metric em{display:block;font-style:normal;color:var(--mut);font-size:12px}
+.result{border:1px solid var(--gr);background:#0c231e;border-radius:8px;padding:12px 14px;margin:12px 0}
+.plot{width:100%;height:auto;background:var(--panel2);border:1px solid #1f4257;border-radius:8px;display:block}
+.gr{stroke:#1f4257}.zero{stroke:#5d8aa3}.band{stroke:var(--or);stroke-dasharray:5 4;opacity:.7}.tk{fill:var(--mut);font-size:11px}.ax{fill:#cfe3ee;font-size:12px}
+.fit{stroke:var(--cy);stroke-width:2}.pt{fill:var(--or);fill-opacity:.9}.smp{stroke:var(--gr);stroke-dasharray:5 4;fill:none}.sm{fill:var(--gr)}
+.ci-area{fill:#43dcff1f;stroke:#43dcff88;stroke-width:1;stroke-dasharray:3 3}
+.pi-line{stroke:var(--gr);stroke-width:2}
+.chk{display:grid;grid-template-columns:1fr auto;gap:2px 12px;border-left:4px solid var(--line);background:var(--panel2);padding:10px 14px;margin-top:8px;border-radius:0 8px 8px 0}
+.chk span{grid-column:1;color:var(--mut);font-size:13px}.chk em{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-weight:700}
+.chk.ok{border-color:var(--gr)}.chk.no{border-color:var(--pk)}.chk.no em{color:var(--pk)}.chk.wt em{color:var(--mut)}
+.footer{margin-top:18px;color:#7f9db0;font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+@media(max-width:960px){.grid,.two,.two.a,.form{display:block}.form label{margin-bottom:10px}.card{margin-bottom:16px}}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.brand-left{display:flex;align-items:center;gap:14px;flex:1;min-width:260px}.logo{width:54px;height:54px;flex:none}
+.share-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.noscript-box{background:#2c1522;border:2px solid var(--pk);color:#ffc4e0;padding:14px 16px;border-radius:10px;margin:14px 0;font-size:14px}
+.guide{background:#0d2c3f;border:1px solid var(--cy);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:grid;gap:10px}.guide b{color:var(--cy)}
+.track{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}.chip.d{border-color:var(--gr);color:var(--gr)}
+details.learn{background:var(--panel2);border:1px solid #1f4257;border-radius:8px;margin-top:10px;padding:0 14px}details.learn summary{cursor:pointer;padding:11px 0;font-weight:600}details.learn[open] summary{color:var(--cy)}details.learn>div{padding-bottom:12px;color:#d3e4ee}
+.fx{font:italic 17px Georgia,serif;color:var(--cy);margin:8px 0}.ex{border-left:3px solid var(--gr);padding:6px 12px;background:#10301f55;margin:8px 0;font-variant-numeric:tabular-nums}
+.quiz{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}.quiz input{width:110px}.fb{font-size:13px;flex-basis:100%}ol.route{padding-left:20px;color:#d3e4ee}
+.toggles{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:13px;color:var(--mut)}
+.toggles label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.cuv-slot{cursor:pointer}
+.mode-switch{display:inline-flex;background:#07141f;border:1px solid var(--line);border-radius:8px;padding:3px;gap:4px}
+.mode-switch button{border:0;background:transparent;color:var(--mut);padding:6px 12px;border-radius:6px;font:600 12.5px system-ui;cursor:pointer}
+.mode-switch button.on{background:var(--cy);color:#04202b}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="brand">
+  <div class="brand-left">
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><path d="M19 4h10M21 4v14L9 40q-2 4 2 4h26q4 0 2-4L27 18V4" fill="none" stroke="#43dcff" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 35l7-5 6 3 8-9" stroke="#a6e66a" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+    <div>
+      <h1>Lab Simulation Lilibet</h1>
+      <p class="lead">Aprende a construir una curva de calibración paso a paso: desde diluir un patrón hasta colocar las celdas en el espectrofotómetro, observar el espectro de absorción e interpretar la regresión lineal y el coeficiente de determinación.</p>
+    </div>
+  </div>
+  <div class="share-bar" id="exportControls">
+    <button class="btn pri" id="btnDownloadApp" type="button">⬇️ Descargar simulador (.html)</button>
+    <button class="btn" id="btnShareHelp" type="button">❓ ¿Cómo enviar y abrir?</button>
+  </div>
+</header>
+
+<div id="shareHelpBox" class="card" hidden style="margin-top:14px;border-color:var(--cy);background:#0b2233">
+  <h3 style="color:var(--cy);margin-bottom:6px">Cómo compartir este simulador para que cualquiera pueda abrirlo</h3>
+  <ol class="route" style="margin:6px 0">
+    <li>Haz clic en el botón <b>«⬇️ Descargar simulador (.html)»</b> arriba a la derecha. Se guardará el archivo <code>Simulador_Laboratorio_Lilibet.html</code> (contiene todo el programa en un solo archivo y funciona sin internet).</li>
+    <li>Envía ese archivo descargado por WhatsApp, correo electrónico, Telegram o súbelo al aula virtual.</li>
+    <li><b>En computadora o Android:</b> Solo deben abrir el archivo con Chrome, Edge, Firefox o Safari.</li>
+    <li><b>En iPhone (iOS):</b> El visor interno de WhatsApp y de la app «Archivos» de iPhone permite recorrer las 5 pestañas, pero Apple bloquea los cálculos interactivos dentro de la vista rápida. Para tener interactividad completa en iPhone, toca el botón <b>Compartir (⬆️)</b> en WhatsApp y elige <b>«Chrome»</b> (Google Chrome para iPhone).</li>
+  </ol>
+</div>
+
+<div id="jsBlockedBanner" class="noscript-box" hidden>
+  <b>📱 Vista rápida de iPhone / WhatsApp detectada:</b> Puedes avanzar por las 5 pestañas (1 a 5) tocando los botones de navegación. Si quieres usar también los botones interactivos de pipeteo y medición en tu iPhone, toca el ícono <b>Compartir (⬆️)</b> abajo en WhatsApp y selecciona <b>«Chrome»</b> (el visor rápido interno de iPhone desactiva la simulación dinámica).
+</div>
+
+<input type="radio" name="nav_page" id="tab_inicio" class="nav-radio" checked>
+<input type="radio" name="nav_page" id="tab_preparacion" class="nav-radio">
+<input type="radio" name="nav_page" id="tab_medicion" class="nav-radio">
+<input type="radio" name="nav_page" id="tab_analisis" class="nav-radio">
+<input type="radio" name="nav_page" id="tab_criterios" class="nav-radio">
+
+<nav>
+  <label for="tab_inicio" data-go="inicio" class="on">1. Diseñar método</label>
+  <label for="tab_preparacion" data-go="preparacion">2. Preparar diluciones</label>
+  <label for="tab_medicion" data-go="medicion">3. Medir en espectrofotómetro</label>
+  <label for="tab_analisis" data-go="analisis">4. Analizar curva</label>
+  <label for="tab_criterios" data-go="criterios">5. Control de calidad</label>
+</nav>
+
+<div class="guide" id="guide" aria-live="polite"></div>
+
+<main>
+<!-- ==================== 1. DISEÑAR ==================== -->
+<section id="inicio" class="page on">
+  <div class="grid">
+    <div class="card">
+      <h2>Configura el método</h2>
+      <div class="form">
+        <label>Analito
+          <select id="analyte">
+            <option value="methylene" selected>Azul de metileno</option>
+            <option value="iron">Hierro (II)</option>
+            <option value="phosphate">Fosfatos</option>
+            <option value="tartrazine">Tartrazina</option>
+            <option value="chlorophylla">Clorofila a</option>
+            <option value="carotene">Beta-caroteno</option>
+            <option value="riboflavin">Riboflavina</option>
+            <option value="protein">Proteína</option>
+            <option value="caffeine">Cafeína</option>
+            <option value="paracetamol">Paracetamol</option>
+            <option value="custom">Analito personalizado</option>
+          </select>
+        </label>
+        <label id="customWrap" hidden>Nombre del analito<input id="customName" placeholder="Ejemplo: Compuesto X"></label>
+        <label>Solvente
+          <select id="matrix">
+            <option selected>Agua</option>
+            <option>Etanol</option>
+            <option>Metanol</option>
+            <option>Acetona</option>
+            <option>Acetonitrilo</option>
+            <option>Hexano</option>
+            <option>Isooctano</option>
+            <option>Ciclohexano</option>
+          </select>
+        </label>
+        <label>Técnica de preparación en mesada
+          <select id="prepMode">
+            <option value="serial">Diluciones seriadas paso a paso</option>
+            <option value="indep" selected>Diluciones independientes desde patrón madre</option>
+          </select>
+        </label>
+        <label>Longitud de onda de trabajo (nm)<input id="wave" type="number" min="190" max="900"></label>
+        <label>Concentración del estándar más alto<input id="max" type="number" min="0.001" step="any"></label>
+        <label>Unidad de concentración
+          <select id="unit">
+            <option selected>mg/L</option>
+            <option>µg/mL</option>
+            <option>mg/mL</option>
+            <option>µmol/L</option>
+          </select>
+        </label>
+      </div>
+      <div class="actions">
+        <label for="tab_preparacion" class="btn pri" id="configure" role="button" tabindex="0">Configurar método e ir a preparar →</label>
+      </div>
+    </div>
+    <div class="card" id="theory"></div>
+  </div>
+</section>
+
+<!-- ==================== 2. PREPARAR ==================== -->
+<section id="preparacion" class="page">
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+      <div>
+        <h2>Mesada de preparación de diluciones</h2>
+        <p class="mut" id="prepSubtitle">Observa cómo se transfieren las alícuotas desde la solución madre con la micropipeta, se añade el solvente y se enrasa hasta el menisco.</p>
+      </div>
+      <div class="mode-switch" role="group" aria-label="Modo de dilución">
+        <button id="btnModeIndep" onclick="switchDilMode('indep')">Matraces (Independiente)</button>
+        <button id="btnModeSerial" onclick="switchDilMode('serial')">Dilución seriada (mitad a mitad)</button>
+      </div>
+    </div>
+
+    <div class="stage">
+      <svg id="bench" viewBox="0 0 880 360" role="img" aria-label="Mesada de laboratorio con solución madre, solvente, micropipeta con tip y matraces aforados"></svg>
+    </div>
+
+    <div class="actions">
+      <button class="btn pri" id="pOne" type="button">Preparar siguiente estándar</button>
+      <button class="btn ok" id="pAll" type="button">Preparar toda la serie</button>
+      <button class="btn" id="pReset" type="button">Vaciar material</button>
+      <label for="tab_medicion" class="btn pri" data-go="medicion" role="button" tabindex="0">Llevar celdas al espectrofotómetro (3. Medir) →</label>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h2 id="planTitle">Protocolo de dilución en la mesada</h2>
+      <div class="scroll">
+        <table class="tb">
+          <thead>
+            <tr><th>Estándar</th><th>Concentración objetivo</th><th>Origen de la alícuota</th><th>Volumen de alícuota</th><th>Volumen final</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="plan"></tbody>
+        </table>
+      </div>
+      <p class="small" id="planFoot">En cada matraz se aplica la relación Concentración inicial × Volumen inicial = Concentración final × Volumen final, y se enrasa con solvente haciendo coincidir la base del menisco con la línea de aforo.</p>
+    </div>
+
+    <div class="card">
+      <h2>Parámetros volumétricos</h2>
+      <div class="form">
+        <label>Concentración de la solución madre<input id="Cs" type="number" min="0.001" step="any"></label>
+        <label>Volumen final de cada matraz (mL)
+          <select id="Vf"><option>5</option><option selected>10</option><option>25</option><option>50</option><option>100</option></select>
+        </label>
+      </div>
+      <div id="prepWarn"></div>
+      <div class="note">
+        <b>Buenas prácticas de laboratorio:</b> Utiliza elementos de protección personal (guardapolvo, gafas de seguridad y guantes), pipetas calibradas y matraces aforados limpios. Para una mayor exactitud, se recomienda preparar cada estándar de manera independiente a partir de la solución madre.
+      </div>
+    </div>
+  </div>
+  <div class="card" id="lPrep"></div>
+</section>
+
+<!-- ==================== 3. MEDIR ==================== -->
+<section id="medicion" class="page">
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <div>
+        <h2>Estación de medición: Espectrofotómetro y monitor de espectro</h2>
+        <p class="mut" id="measureIntro">Las muestras ya están listas en sus celdas de 1,0 cm de camino óptico. Haz clic en cualquier celda de la gradilla para insertarla en el equipo y observar su espectro en la computadora.</p>
+      </div>
+      <span class="badge ok" id="specBadge">Camino óptico de 1,0 cm · Haz simple</span>
+    </div>
+
+    <div class="rack-bar" id="rackBar" aria-label="Gradilla de celdas listas para ingresar al equipo"></div>
+
+    <div class="stage">
+      <svg id="specSvg" viewBox="0 0 920 390" role="img" aria-label="Mesa con gradilla de celdas, espectrofotómetro y computadora mostrando el espectro"></svg>
+    </div>
+
+    <div class="cuv-controls" id="cuvControls"></div>
+    <div id="optWarn"></div>
+
+    <div class="lcd-grid">
+      <div class="lcd-cell"><small>Absorbancia bruta</small><strong id="read">—</strong><span id="readSub">Sin lectura</span></div>
+      <div class="lcd-cell"><small>Absorbancia corregida</small><strong class="cy" id="readCor">—</strong><span id="readZero">Blanco (Ajuste a cero): Pendiente</span></div>
+      <div class="lcd-cell"><small>Porcentaje de transmitancia</small><strong class="or" id="readT">—</strong><span id="readRatio">Intensidad transmitida / Intensidad incidente</span></div>
+      <div class="lcd-cell"><small>Celda dentro del equipo</small><strong style="font-size:17px;color:var(--ink)" id="readCell">Estándar 0 (Blanco)</strong><span id="readWave">Longitud de onda = 664 nm</span></div>
+    </div>
+
+    <div class="actions">
+      <label class="inl">Réplicas por celda<select id="nrep"><option>1</option><option>2</option><option selected>3</option></select></label>
+      <button class="btn ok" id="blank">1. Insertar Estándar 0 y ajustar el cero (Blanco)</button>
+      <button class="btn pri" id="measCur">2. Medir celda actual en el equipo</button>
+      <button class="btn" id="one">Medir siguiente celda</button>
+      <button class="btn" id="all">Medir todos los estándares</button>
+      <button class="btn" id="randAll">🎲 Medir en orden aleatorio</button>
+      <button class="btn pri" id="smpBtn">🧪 Medir muestra problema</button>
+      <button class="btn" id="clear">Reiniciar lecturas</button>
+    </div>
+    <p class="small" id="measureStatus" role="status" style="margin-top:10px;color:var(--cy);font-weight:600">Paso inicial: Presiona «1. Insertar Estándar 0 y ajustar el cero (Blanco)» para calibrar el 100 por ciento de transmitancia (0,000 AU).</p>
+  </div>
+
+  <div class="two a" style="margin-bottom:16px">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+        <div>
+          <h2 id="liveTitle">Barrido espectral de absorbancia en la computadora</h2>
+          <p class="small" id="liveSub" style="margin:0">Curvas espectrales superpuestas de las celdas medidas y selección de longitud de onda máxima</p>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <label class="small" style="display:flex;align-items:center;gap:5px">Longitud de onda (nm):
+            <input id="waveSlider" type="range" min="220" max="890" step="1" style="width:110px">
+          </label>
+          <button class="btn" id="btnSetLmax" style="padding:5px 9px;font-size:12px">Fijar en el máximo de absorción</button>
+        </div>
+      </div>
+      <div id="livePlot"></div>
+      <p class="small" id="liveHint" style="margin-top:8px"></p>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <div>
+          <h2>Planilla de absorbancias medidas</h2>
+          <p class="small" style="margin:0">Haz clic en «Meter al equipo» para llevar esa celda al espectrofotómetro.</p>
+        </div>
+        <label for="tab_analisis" class="btn pri" data-go="analisis" role="button" tabindex="0">Ir a 4. Analizar curva →</label>
+      </div>
+      <div class="scroll">
+        <table class="tb">
+          <thead><tr><th>Celda</th><th>Concentración</th><th>Réplica 1</th><th>Réplica 2</th><th>Réplica 3</th><th>Absorbancia media corregida</th><th>Desviación estándar relativa porcentual</th><th>Equipo</th></tr></thead>
+          <tbody id="mt"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="lMed"></div>
+</section>
+
+<!-- ==================== 4. ANALIZAR ==================== -->
+<section id="analisis" class="page">
+  <div class="two a">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <h2>Curva de calibración (Absorbancia frente a Concentración)</h2>
+        <div class="toggles">
+          <label><input type="checkbox" id="chkCI" checked> Banda de intervalo de confianza del 95 por ciento</label>
+          <label><input type="checkbox" id="chkPI" checked> Interpolación de la muestra problema</label>
+        </div>
+      </div>
+      <div id="chart"></div>
+      <h3 style="margin-top:14px">Gráfico de residuos (Absorbancia observada menos Absorbancia estimada)</h3>
+      <div id="resid"></div>
+    </div>
+    <div class="card">
+      <h2>Regresión lineal por mínimos cuadrados y análisis de la varianza</h2>
+      <div id="anRes"></div>
+    </div>
+  </div>
+  <div class="card" id="lAn"></div>
+</section>
+
+<!-- ==================== 5. CONTROLAR ==================== -->
+<section id="criterios" class="page">
+  <div class="card">
+    <h2>Auditoría de calidad de la curva y buenas prácticas espectrofotométricas</h2>
+    <p class="mut" id="ctlSum"></p>
+    <div id="checks"></div>
+  </div>
+</section>
+</main>
+
+<div class="footer">
+  <p style="margin:0"><b>Bibliografía oficial de referencia:</b> Barwick, Vicki (2003), <i>Preparation of Calibration Curves: A Guide to Best Practice</i>, LGC Limited; Mettler Toledo (2025), <i>UV/Vis Spectrophotometry: Fundamentals and Applications</i>, Mettler-Toledo Group; Agilent Technologies (2025), <i>Fundamentos de la espectrofotometría UV-vis: Manual de iniciación</i>, Agilent Technologies, Inc.; Dotzert, Michelle (2022), <i>How to Make a Calibration Curve: A Step-by-Step Guide</i>, Lab Manager.</p>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),g=v=>Number.isFinite(v)?v.toLocaleString('es-AR',{maximumSignificantDigits:4}):'—',fm=v=>Number.isFinite(v)?v.toLocaleString('es-AR',{maximumFractionDigits:3}):'0';
+if($('jsBlockedBanner'))$('jsBlockedBanner').hidden=true;
+const numVal=(id,def)=>{const raw=String($(id)&&$(id).value||'').replace(',','.');const n=parseFloat(raw);return Number.isFinite(n)&&n>0?n:def};
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length,sd=a=>a.length>1?Math.sqrt(a.reduce((s,x)=>s+(x-mean(a))**2,0)/(a.length-1)):NaN;
+const t95=df=>df<=20?[12.71,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.16,2.145,2.131,2.12,2.11,2.101,2.093,2.086][Math.max(0,df-1)]:df<=30?2.05:1.96;
+const gauss=()=>Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*Math.PI*Math.random());
+
+/* Base de datos de analitos:
+   [nombre, unidad, concentración máxima por defecto, longitud de onda máxima en nm, pendiente, curvatura, color hexadecimal, ancho de banda en nm, segundo pico en nm, solvente por defecto] */
+const D={
+  methylene:['Azul de metileno','mg/L',4,664,.231,0,'#1f6fff',40,612,'Agua'],
+  iron:['Hierro (II)','mg/L',5,510,.198,0,'#e84a27',44,435,'Agua'],
+  phosphate:['Fosfatos','mg/L',1,880,.65,0,'#2855d6',52,710,'Agua'],
+  tartrazine:['Tartrazina','mg/L',20,427,.0505,0,'#f7c316',46,257,'Agua'],
+  chlorophylla:['Clorofila a','mg/L',10,662,.115,0,'#22b54c',24,430,'Acetona'],
+  carotene:['Beta-caroteno','mg/L',8,455,.14,0,'#ff7b1c',35,483,'Hexano'],
+  riboflavin:['Riboflavina','mg/L',15,445,.078,0,'#ffd000',38,373,'Agua'],
+  protein:['Proteína','mg/mL',1.5,595,.72,.28,'#3a63e0',55,470,'Agua'],
+  caffeine:['Cafeína','mg/L',20,273,.05,0,'#9ee4f5',25,205,'Agua'],
+  paracetamol:['Paracetamol','µg/mL',12,243,.066,0,'#9ee4f5',27,285,'Metanol'],
+  custom:['Analito personalizado','mg/L',10,500,.095,0,'#43dcff',42,320,'Agua']
+};
+
+let cfg,lv,blank,smp,qz,cur='inicio',Cs=25,Vf=10,epoch=0;
+let prepAnim={activeIdx:-1,stepText:'Lista para comenzar la preparación de estándares en la mesada.',meniscus:0};
+
+let cell={
+  sel:0,          // 0..5 = Estándar 0..Estándar 5, 6 = Muestra problema
+  inHolder:true,  // celda dentro del portaceldas del equipo
+  lid:true,       // tapa del espectrofotómetro cerrada
+  mat:'quartz',   // 'quartz' | 'glass' | 'pmma'
+  clean:'clean',  // 'clean' | 'print' | 'bubbles'
+  rot:false,      // false = 0 grados caras ópticas en el haz; true = 90 grados caras esmeriladas
+  scanning:false, // animación de transferencia
+  hadError:false,
+  randOrder:false
+};
+
+function waveToColor(w){
+  if(w<380)return '#b86bff';
+  if(w<440)return '#7b52ff';
+  if(w<490)return '#28b9ff';
+  if(w<525)return '#1ef0a8';
+  if(w<580)return '#98f53b';
+  if(w<635)return '#ff852c';
+  return '#ff3b56';
+}
+
+function specProfile(w){
+  const lmax=cfg.lmax,bw=cfg.bw||42,l2=cfg.l2||430;
+  const g1=Math.exp(-0.5*((w-lmax)/bw)**2);
+  const g2=0.34*Math.exp(-0.5*((w-l2)/(bw*0.72))**2);
+  const uvTail=w<235?0.22*Math.exp((235-w)/20):0;
+  return Math.min(1.12,g1+g2+uvTail);
+}
+
+function go(id){
+  document.querySelectorAll('.nav-radio').forEach(r=>{
+    const on=(r.id==='tab_'+id);
+    r.checked=on;
+    if(on)r.setAttribute('checked','checked');
+    else r.removeAttribute('checked');
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===id));
+  document.querySelectorAll('nav [data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===id));
+  cur=id;
+  if(id==='preparacion'){renderPrep();buildBench();drawStage()}
+  if(id==='medicion'){
+    ensureCuvettesReady();
+    renderSpecControls();renderRack();drawSpec();table();
+  }
+  if(id==='analisis')analysis();
+  if(id==='criterios')controlsView();
+  guide();
+  try{window.scrollTo(0,0)}catch(e){}
+}
+document.querySelectorAll('[data-go]').forEach(b=>{
+  b.onclick=()=>{
+    const target=b.dataset.go;
+    if(cur!==target){
+      if(target==='preparacion'&&cur==='inicio')configure();
+      go(target);
+    }
+  };
+});
+document.querySelectorAll('.nav-radio').forEach(r=>{
+  r.onchange=()=>{
+    if(!r.checked)return;
+    const target=r.id.replace('tab_','');
+    if(cur!==target){
+      if(target==='preparacion'&&cur==='inicio')configure();
+      go(target);
+    }
+  };
+});
+
+$('analyte').onchange=()=>{
+  const k=$('analyte').value,d=D[k];
+  $('customWrap').hidden=k!=='custom';
+  $('unit').value=d[1];$('max').value=d[2];$('wave').value=d[3];
+  $('matrix').value=d[9]||'Agua';
+  configure();
+};
+['customName','matrix','prepMode','wave','max','unit'].forEach(id=>{
+  if($(id))$(id).onchange=()=>configure();
+});
+
+/* ---------- 1. CONFIGURACIÓN DEL MÉTODO ---------- */
+function configure(){
+  const k=$('analyte').value,d=D[k],mx=numVal('max',d[2]||5),w=numVal('wave',d[3]);
+  const mode=$('prepMode').value;
+  cfg={
+    key:k,
+    name:k==='custom'?($('customName').value||d[0]):d[0],
+    unit:$('unit').value,
+    max:mx,
+    wave:w,
+    lmax:k==='custom'?w:d[3],
+    bw:d[7],
+    l2:d[8],
+    matrix:$('matrix').value,
+    mode:mode,
+    k:k==='custom'?.95/mx:d[4],
+    q:d[5],
+    col:d[6]
+  };
+  Cs=mode==='serial'?+(mx*2).toPrecision(3):+(mx*5).toPrecision(3);
+  $('Cs').value=Cs;Vf=+$('Vf').value;epoch++;
+  buildLevels();
+  blank=null;
+  qz={bl:0.009,raw:+(0.38+Math.random()*0.35).toFixed(3)};
+  smp={id:'Muestra',t:+((0.36+0.32*Math.random())*mx).toPrecision(3),reps:[],reveal:false,done:true};
+  cell={sel:0,inHolder:true,lid:true,mat:'quartz',clean:'clean',rot:false,scanning:false,hadError:false,randOrder:false};
+  prepAnim={activeIdx:-1,stepText:'Presiona «Preparar siguiente estándar» para iniciar el pipeteo en la mesada.',meniscus:0};
+  if($('waveSlider'))$('waveSlider').value=cfg.wave;
+  buildBench();drawStage();renderTheory();
+}
+
+function buildLevels(){
+  const mx=cfg.max;
+  if(cfg.mode==='serial'){
+    const fracs=[0,1,0.5,0.25,0.125,0.0625];
+    lv=fracs.map((f,i)=>({id:'Estándar '+i,shortId:'E'+i,c:+(f*mx).toPrecision(4),cr:+(f*mx).toPrecision(4),reps:[],done:false,stage:0}));
+  }else{
+    const fracs=[0,0.2,0.4,0.6,0.8,1];
+    lv=fracs.map((f,i)=>({id:'Estándar '+i,shortId:'E'+i,c:+(f*mx).toPrecision(4),cr:+(f*mx).toPrecision(4),reps:[],done:false,stage:0}));
+  }
+}
+
+function switchDilMode(m){
+  cfg.mode=m;$('prepMode').value=m;
+  Cs=m==='serial'?+(cfg.max*2).toPrecision(3):+(cfg.max*5).toPrecision(3);
+  $('Cs').value=Cs;
+  buildLevels();
+  resetPrep();
+}
+window.switchDilMode=switchDilMode;
+
+function renderTheory(){
+  const fL=specProfile(cfg.wave),S=cfg.k*fL;
+  $('theory').innerHTML=`
+    <h2>Fundamento: Ley de Beer–Lambert</h2>
+    <p class="eq">Absorbancia = −log₁₀(Intensidad transmitida / Intensidad incidente) = ε · l · c</p>
+    <p>Para el analito <b>${cfg.name}</b> disuelto en <b>${cfg.matrix}</b>, el haz de luz monocromática seleccionado a una longitud de onda de <b>${cfg.wave} nm</b> (con máximo de absorción en ${cfg.lmax} nm) atraviesa la celda de camino óptico igual a <b>1,0 cm</b>. La absorbancia es directamente proporcional a la concentración, con una sensibilidad esperada de aproximadamente <b>${g(S)} AU por cada ${cfg.unit}</b>.</p>
+    <h3 style="margin-top:12px">Ruta de trabajo en el simulador</h3>
+    <ol class="route">
+      <li><b>Preparar diluciones:</b> Prepara los estándares por dilución independiente en matraces aforados o mediante diluciones seriadas, observando el enrase en el menisco.</li>
+      <li><b>Medir en el espectrofotómetro:</b> Coloca cada celda en el compartimento del espectrofotómetro, verifica el estado de las ventanas ópticas y observa el espectro de absorción en la pantalla de la computadora.</li>
+      <li><b>Analizar y controlar:</b> Ajusta la recta por regresión de mínimos cuadrados, interpola la concentración de la muestra problema y verifica los criterios de calidad.</li>
+    </ol>`;
+}
+
+/* ---------- 2. ESTACIÓN DE PREPARACIÓN ---------- */
+const FL='M26 10H38V74L57 112C64 126 63 148 47 160H17C1 148 0 126 7 112L26 74Z';
+const BT='M31 10H45V70L66 110C75 126 73 148 56 160H20C3 148 1 126 10 110L31 70Z';
+
+function buildBench(){
+  $('btnModeIndep').classList.toggle('on',cfg.mode==='indep');
+  $('btnModeSerial').classList.toggle('on',cfg.mode==='serial');
+  const armX=prepAnim.activeIdx<0?84:230+prepAnim.activeIdx*92+32;
+  const menY=95-(prepAnim.meniscus*22);
+
+  let s=`<defs>
+    <clipPath id="cps"><path d="${BT}"/></clipPath>
+    ${lv.map((l,i)=>`<clipPath id="cp${i}"><path d="${FL}"/></clipPath>`).join('')}
+    <clipPath id="menClip"><circle cx="802" cy="84" r="48"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="880" height="308" fill="#091926"/>
+  <line x1="0" x2="880" y1="195" y2="195" stroke="#153247" stroke-width="1"/>
+  <rect class="bench" x="0" y="308" width="880" height="52"/>
+  <line x1="0" x2="880" y1="308" y2="308" stroke="#3e6b89" stroke-width="2"/>
+
+  <g transform="translate(18,8)">
+    <rect x="0" y="0" width="690" height="38" rx="8" fill="#0d2c3f" stroke="#43dcff" stroke-width="1.5"/>
+    <text x="14" y="15" fill="#43dcff" font-weight="700" font-size="11">PROTOCOLO EN MESADA (${cfg.mode==='serial'?'MODO DILUCIÓN SERIADA':'MODO MATRACES INDEPENDIENTES'}):</text>
+    <text id="techBubble" x="14" y="30" fill="#eef6fa" font-size="11.5">${prepAnim.stepText}</text>
+  </g>
+
+  <g transform="translate(46,148)">
+    <g clip-path="url(#cps)">
+      <rect class="liq" x="0" y="48" width="76" height="114" fill="${cfg.col}" style="transform:scaleY(.94)"/>
+    </g>
+    <path d="${BT}" class="glass"/>
+    <rect x="28" y="3" width="20" height="7" rx="2" fill="#2c4d8f" stroke="#6f95d8" stroke-width="1"/>
+    <path d="M29.5 28H46.5" stroke="#c6e6ee" stroke-width="2" stroke-linecap="round"/>
+    <line class="mark" x1="31" x2="45" y1="50" y2="50"/>
+    <path d="M33.5 14V68M29 76L14 110C9 122 10 138 20 150" fill="none" stroke="#ffffff45" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text class="lb" x="84" y="328">Solución madre</text>
+  <text class="lc" x="84" y="344">${g(Cs)} ${cfg.unit}</text>
+
+  <g transform="translate(148,180)">
+    <path d="M22 20H40V52L56 84C62 96 60 116 46 126H16C2 116 0 96 6 84L22 52Z" fill="#2a1c11" stroke="#d99b52" stroke-width="1.8"/>
+    <rect x="20" y="10" width="22" height="10" rx="2.5" fill="#445c6d"/>
+    <path d="M26 10 L28 2 H34 L36 10 Z" fill="#e84a27"/>
+    <path d="M20 58 L10 84 C7 94 8 108 16 118" fill="none" stroke="#ffffff30" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <text class="lb" x="179" y="328">Solvente</text>
+  <text class="lc" x="179" y="344">${cfg.matrix}</text>`;
+
+  if(cfg.mode==='serial'){
+    s+=`<path d="M96 146 Q218 118 346 146" fill="none" stroke="#ffb85c" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  }
+
+  lv.forEach((l,i)=>{
+    const x=230+i*92;
+    const isSer=cfg.mode==='serial'&&i>1;
+    s+=`<g transform="translate(${x},148)">
+      <g clip-path="url(#cp${i})">
+        <rect class="liq" id="lq${i}" x="0" y="52" width="64" height="110" fill="${l.c?cfg.col:'#bfe6ef'}" style="transform:scaleY(0)"/>
+      </g>
+      <path d="${FL}" class="glass"/>
+      <rect x="23" y="4" width="18" height="6" rx="1.8" fill="#2c4d8f" stroke="#6f95d8" stroke-width="1"/>
+      <path d="M24.5 28H39.5" stroke="#c6e6ee" stroke-width="1.8" stroke-linecap="round"/>
+      <line class="mark" x1="26" x2="38" y1="52" y2="52"/>
+      <path d="M28.5 14V70M25 78L11 112C7 124 8 140 18 152" fill="none" stroke="#ffffff45" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+    <text class="lb" x="${x+32}" y="328">${l.id}</text>
+    <text class="lc" x="${x+32}" y="344">${l.c?g(l.c)+' '+cfg.unit:'Blanco (0)'}</text>`;
+    if(isSer){
+      const xPrev=230+(i-1)*92+32,xCur=x+32;
+      s+=`<path d="M${xPrev+8} 145 Q${(xPrev+xCur)/2} 122 ${xCur-8} 145" fill="none" stroke="#ffb85c" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+    }
+  });
+
+  s+=`<g id="techArm" style="transform:translate(${armX}px,54px)">
+    <!-- Pulsador y cuerpo de la micropipeta -->
+    <rect x="-4" y="0" width="8" height="6" rx="2" fill="#2c4d8f"/>
+    <rect x="-7" y="5" width="14" height="4" rx="1.5" fill="#43dcff"/>
+    <path d="M-8 9H8L12 14H8V42L5 46H-5L-8 42Z" fill="#e6f0f5" stroke="#6f92a6" stroke-width="1.3"/>
+    <rect x="-4.5" y="16" width="9" height="16" rx="1.5" fill="#173042"/>
+    <!-- Cono portapuntas -->
+    <path d="M-4.5 46H4.5L3 58H-3Z" fill="#2b3e4d" stroke="#172633" stroke-width="0.9"/>
+    <!-- Tip (punta descartable colocada en la punta de la pipeta) -->
+    <rect x="-4.2" y="57" width="8.4" height="3.5" rx="1" fill="#ffd166" stroke="#d99b26" stroke-width="0.8"/>
+    <path d="M-3.5 60.5H3.5L1.3 88H-1.3Z" fill="#e8f7ff88" stroke="#8ecae6" stroke-width="1"/>
+    <path id="tipLiq" d="M-2.2 72H2.2L1.1 87.5H-1.1Z" fill="${cfg.col}" opacity="${prepAnim.activeIdx>=0?0.85:0}"/>
+    <circle id="pipDrop" cx="0" cy="91" r="2.8" fill="${cfg.col}" opacity="0"/>
+  </g>
+
+  <g transform="translate(0,0)">
+    <circle cx="802" cy="84" r="50" fill="#06131f" stroke="#43dcff" stroke-width="2"/>
+    <g clip-path="url(#menClip)">
+      <rect x="774" y="28" width="56" height="110" fill="#bfe6ef18" stroke="#c6e6ee" stroke-width="2"/>
+      <path id="menLiq" d="M775 ${menY} Q802 ${menY+10} 829 ${menY} V138 H775 Z" fill="${cfg.col}" opacity="0.65"/>
+      <path id="menCurve" d="M775 ${menY} Q802 ${menY+10} 829 ${menY}" fill="none" stroke="#eaffff" stroke-width="2"/>
+      <line x1="766" x2="838" y1="78" y2="78" stroke="#e85227" stroke-width="2.2" stroke-dasharray="4 2"/>
+      <text x="802" y="58" fill="#ffb899" font-size="8.5" font-weight="700" text-anchor="middle">Línea de aforo</text>
+      <text x="802" y="106" fill="#eef6fa" font-size="9" font-weight="700" text-anchor="middle">Menisco</text>
+    </g>
+    <text x="802" y="148" class="lb" style="font-size:11.5px;fill:#43dcff">Visor de enrase</text>
+    <text x="802" y="162" class="lc" style="font-size:10.5px">Aforo (Menisco)</text>
+  </g>`;
+
+  $('bench').innerHTML=s;
+}
+
+function drawStage(){
+  lv.forEach((l,i)=>{
+    const e=$('lq'+i);if(!e)return;
+    const f=l.stage===2?1:l.stage===1?0.42:0;
+    e.style.transform=`scaleY(${f})`;
+    e.style.opacity=!l.c?(l.stage?0.35:0):l.stage===1?0.9:(0.22+0.78*l.c/cfg.max);
+  });
+}
+
+function pos(i,t,msg,men=1){
+  prepAnim.activeIdx=i;
+  if(msg)prepAnim.stepText=msg;
+  prepAnim.meniscus=men;
+  const arm=$('techArm');
+  if(arm)arm.style.transform=`translate(${i<0?84:230+i*92+32}px,54px)`;
+  if($('techBubble')&&msg)$('techBubble').textContent=msg;
+  const drop=$('pipDrop'),tLiq=$('tipLiq');
+  if(drop)drop.setAttribute('opacity',i>=0?'1':'0');
+  if(tLiq)tLiq.setAttribute('opacity',i>=0?'0.85':'0');
+  const menY=95-(men*22);
+  if($('menLiq'))$('menLiq').setAttribute('d',`M775 ${menY} Q802 ${menY+10} 829 ${menY} V138 H775 Z`);
+  if($('menCurve'))$('menCurve').setAttribute('d',`M775 ${menY} Q802 ${menY+10} 829 ${menY}`);
+}
+
+function prep(i){
+  const l=lv[i],e=epoch;
+  if(!l||l.done||!(Cs>=cfg.max))return;
+  l.done=true;
+  if(cfg.mode==='serial'){
+    if(i===0)l.cr=0;
+    else if(i===1)l.cr=l.c*(1+gauss()*.0045);
+    else{
+      const prevCr=lv[i-1].done?lv[i-1].cr:lv[i-1].c;
+      l.cr=(prevCr*0.5)*(1+gauss()*.0045);
+    }
+  }else{
+    l.cr=l.c*(1+gauss()*.0038);
+  }
+
+  const vAliq=cfg.mode==='serial'?(i===1?l.c*Vf/Cs:Vf/2):(l.c*Vf/Cs);
+  const srcName=cfg.mode==='serial'?(i===1?'Solución madre':(lv[i-1]?lv[i-1].id:'Estándar')):'Solución madre';
+  pos(i,l.c?`${fm(vAliq)} mL`:'Solo blanco',
+      l.c?`Pipeteando ${fm(vAliq)} mL desde ${srcName} hacia ${l.id} (${g(l.c)} ${cfg.unit})...`:`Preparando Estándar 0 (Blanco) únicamente con ${cfg.matrix}...`,0.45);
+
+  setTimeout(()=>{
+    if(e===epoch){
+      l.stage=1;drawStage();
+      pos(i,'Enrasando...',`Agregando solvente (${cfg.matrix}) en ${l.id} y enrasando la base del menisco a ${Vf} mL.`,1);
+    }
+  },480);
+  setTimeout(()=>{
+    if(e===epoch){
+      l.stage=2;drawStage();
+      pos(i,'✓ Homogeneizado',`${l.id} (${g(l.c)} ${cfg.unit}) enrasado al aforo y homogeneizado.`,1);
+    }
+  },1050);
+  renderPrep();
+}
+
+$('pOne').onclick=()=>{
+  const i=lv.findIndex(l=>!l.done);
+  if(i>=0)prep(i);
+};
+
+$('pAll').onclick=()=>{
+  const e=epoch;
+  [0,1,2,3,4,5].forEach((idx,step)=>setTimeout(()=>{if(e===epoch)prep(idx)},step*850));
+};
+
+function resetPrep(){
+  epoch++;
+  lv.forEach(l=>{l.done=false;l.stage=0;l.reps=[]});
+  blank=null;smp.reps=[];smp.reveal=false;
+  prepAnim={activeIdx:-1,stepText:'Material limpio. Presiona «Preparar siguiente estándar» para iniciar.',meniscus:0};
+  buildBench();drawStage();renderPrep();
+}
+$('pReset').onclick=resetPrep;
+$('Cs').onchange=$('Vf').onchange=()=>{Cs=+$('Cs').value>0?+$('Cs').value:1;Vf=+$('Vf').value;resetPrep()};
+
+function renderPrep(){
+  $('btnModeIndep').classList.toggle('on',cfg.mode==='indep');
+  $('btnModeSerial').classList.toggle('on',cfg.mode==='serial');
+  const v1=cfg.max*.2*Vf/Cs,ok=Cs>=cfg.max;
+  let w='';
+  if(!ok)w=`<div class="note bad">La solución madre (${g(Cs)} ${cfg.unit}) debe tener una concentración mayor o igual al estándar más alto (${g(cfg.max)} ${cfg.unit}).</div>`;
+  else if(cfg.mode==='indep'&&v1<.1)w=`<div class="note">El Estándar 1 requiere ${fm(v1*1000)} µL (menos de 100 µL). En el laboratorio conviene usar una solución intermedia para disminuir el error relativo de pipeteo.</div>`;
+  else if(cfg.mode==='serial')w=`<div class="note"><b>Modo de dilución seriada activo:</b> Se parte de la solución madre (${g(Cs)} ${cfg.unit}) para preparar el Estándar 1 (${g(lv[1].c)} ${cfg.unit}) y luego se transfieren ${fm(Vf/2)} mL de cada matraz al siguiente, reduciendo la concentración a la mitad en cada paso.</div>`;
+  $('prepWarn').innerHTML=w;
+
+  $('plan').innerHTML=lv.map((l,i)=>{
+    if(i===0)return `<tr><td><b>Estándar 0 (Blanco)</b></td><td>0 ${cfg.unit}</td><td>Solo solvente (${cfg.matrix})</td><td>0 mL</td><td>${Vf} mL</td><td>${l.done?'<span class="ok">✓ Enrasado</span>':'Pendiente'}</td></tr>`;
+    if(cfg.mode==='serial'){
+      const src=i===1?`Solución madre (${g(Cs)} ${cfg.unit})`:`${lv[i-1].id} (${g(lv[i-1].c)} ${cfg.unit})`;
+      const vA=i===1?fm(l.c*Vf/Cs):fm(Vf/2);
+      return `<tr><td><b>${l.id}</b></td><td>${g(l.c)} ${cfg.unit}</td><td>De ${src}</td><td>${vA} mL</td><td>${Vf} mL</td><td>${l.done?'<span class="ok">✓ Enrasado</span>':'Pendiente'}</td></tr>`;
+    }else{
+      const V=l.c*Vf/Cs;
+      return `<tr><td><b>${l.id}</b></td><td>${g(l.c)} ${cfg.unit}</td><td>Solución madre (${g(Cs)} ${cfg.unit})</td><td>${fm(V)} mL</td><td>${Vf} mL</td><td>${l.done?'<span class="ok">✓ Enrasado</span>':'Pendiente'}</td></tr>`;
+    }
+  }).join('');
+  $('pOne').disabled=$('pAll').disabled=!ok;
+  learnPrep();guide();
+}
+
+/* ---------- 3. MEDICIÓN EN ESPECTROFOTÓMETRO REAL + COMPUTADORA AL LADO ---------- */
+function ensureCuvettesReady(){
+  lv.forEach(l=>{
+    if(!l.done){
+      l.done=true;l.stage=2;
+      l.cr=l.c*(1+gauss()*.0038);
+    }
+  });
+}
+
+function getObjByIdx(idx){return idx===6?smp:lv[idx]}
+function getLabelByIdx(idx){return idx===6?'Muestra problema':lv[idx].id+(idx===0?' (Blanco)':'')}
+
+function opticalPenalties(w){
+  let bgAbs=0,scatter=0,stray=0.0012,errMsg=[];
+  if(cell.mat==='pmma'&&w<380){
+    bgAbs+=Math.min(2.1,0.35+(380-w)*0.022);
+    errMsg.push(`Corte ultravioleta: la celda de plástico absorbe radiación a ${w} nm (por debajo de 380 nm). Selecciona una celda de cuarzo.`);
+  }else if(cell.mat==='glass'&&w<334){
+    bgAbs+=Math.min(1.7,0.22+(334-w)*0.02);
+    errMsg.push(`Corte ultravioleta: el vidrio óptico absorbe por debajo de 334 nm. Utiliza una celda de cuarzo.`);
+  }
+  if(cell.clean==='print'){
+    scatter+=0.082;
+    errMsg.push('Huella dactilar en la ventana óptica: dispersa el haz de luz y añade 0,082 AU falsas. Limpia la celda con papel suave sin pelusa.');
+  }else if(cell.clean==='bubbles'){
+    scatter+=0.13+Math.random()*0.025;
+    errMsg.push('Burbujas de aire en el camino óptico: desvían el haz de luz por refracción.');
+  }
+  if(cell.rot){
+    scatter+=0.65;
+    errMsg.push('Celda girada 90 grados: el haz de luz incide sobre las paredes opacas esmeriladas de sujeción en lugar de las ventanas ópticas transparentes.');
+  }
+  if(!cell.lid){
+    stray+=0.062;
+    errMsg.push('Tapa del compartimento abierta: ingresa radiación externa del laboratorio al detector, alterando la lectura de absorbancia.');
+  }
+  return{bgAbs,scatter,stray,errMsg};
+}
+
+function sigAt(c,w=cfg.wave,withNoise=true){
+  const fL=specProfile(w);
+  const pen=opticalPenalties(w);
+  let trueA=cfg.k*fL*c/(1+cfg.q*c) + 0.009 + pen.bgAbs + pen.scatter;
+  let obsA=-Math.log10((Math.pow(10,-trueA)+pen.stray)/(1+pen.stray));
+  if(!cell.lid)obsA=Math.max(0.001,obsA-0.032);
+  const noise=withNoise?gauss()*(0.0012+0.0035*obsA):0;
+  return +Math.max(0.0005,obsA+noise).toFixed(4);
+}
+const sig=c=>sigAt(c,cfg.wave,true);
+const say=t=>{$('measureStatus').textContent=t};
+
+function renderRack(){
+  const items=[
+    ...lv.map((l,i)=>({idx:i,id:l.id,sub:i===0?'Blanco (0)':g(l.c)+' '+cfg.unit,reps:l.reps.filter(Number.isFinite).length})),
+    {idx:6,id:'Muestra problema',sub:'Concentración desconocida',reps:smp.reps.filter(Number.isFinite).length}
+  ];
+  $('rackBar').innerHTML=`<span class="small" style="font-weight:700;color:var(--ink);margin-right:4px">Celdas listas en gradilla (clic para insertar en el equipo):</span>`+items.map(it=>`
+    <button class="rack-btn ${cell.sel===it.idx?'sel':''}" onclick="selectCell(${it.idx})">
+      ${it.id} ${it.reps?`<span style="color:var(--gr)">✓ (${it.reps})</span>`:''}
+      <small>${it.sub}</small>
+    </button>`).join('');
+}
+
+function selectCell(idx){
+  cell.sel=idx;
+  cell.inHolder=true;
+  cell.scanning=false;
+  const obj=getObjByIdx(idx);
+  const validReps=obj.reps.filter(Number.isFinite);
+  const last=validReps[validReps.length-1];
+  if(last!==undefined){
+    updateLCD(last,getLabelByIdx(idx));
+  }else{
+    $('readCell').textContent=getLabelByIdx(idx);
+    $('readWave').textContent=`Longitud de onda = ${cfg.wave} nm`;
+  }
+  renderRack();
+  renderSpecControls();
+  drawSpec();
+  table();
+}
+window.selectCell=selectCell;
+
+function renderSpecControls(){
+  const pen=opticalPenalties(cfg.wave);
+  const matOk=!(cell.mat==='pmma'&&cfg.wave<380)&&!(cell.mat==='glass'&&cfg.wave<334);
+  $('cuvControls').innerHTML=`
+    <div class="cuv-box">
+      <b>1. Material de la celda <span class="badge ${matOk?'ok':'bad'}">${matOk?'Adecuado':'Absorbe luz'}</span></b>
+      <select onchange="setMat(this.value)">
+        <option value="quartz" ${cell.mat==='quartz'?'selected':''}>Cuarzo (170 a 2700 nm)</option>
+        <option value="glass" ${cell.mat==='glass'?'selected':''}>Vidrio óptico (334 a 2500 nm)</option>
+        <option value="pmma" ${cell.mat==='pmma'?'selected':''}>Plástico desechable (380 a 800 nm)</option>
+      </select>
+    </div>
+    <div class="cuv-box">
+      <b>2. Limpieza de ventanas ópticas <span class="badge ${cell.clean==='clean'?'ok':'bad'}">${cell.clean==='clean'?'Caras limpias':cell.clean==='print'?'Con huella':'Con burbujas'}</span></b>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn ${cell.clean==='clean'?'ok':''}" style="padding:5px 8px;font-size:12px;flex:1" onclick="setClean('clean')">✨ Limpiar con papel suave</button>
+        <button class="btn ${cell.clean==='print'?'warn':''}" style="padding:5px 8px;font-size:12px" onclick="setClean('print')">👆 Huella</button>
+        <button class="btn ${cell.clean==='bubbles'?'warn':''}" style="padding:5px 8px;font-size:12px" onclick="setClean('bubbles')">🫧 Burbujas</button>
+      </div>
+    </div>
+    <div class="cuv-box">
+      <b>3. Cubierta del equipo <span class="badge ${cell.lid?'ok':'warn'}">${cell.lid?'Cubierta cerrada':'Cubierta abierta'}</span></b>
+      <button class="btn ${!cell.lid?'warn':''}" style="padding:5px 10px;font-size:12px" onclick="toggleLid()">${cell.lid?'🔒 Cerrada (Abrir cubierta)':'🔓 Abierta (Cerrar cubierta)'}</button>
+    </div>`;
+
+  $('optWarn').innerHTML=pen.errMsg.length
+    ?`<div class="note bad"><b>Advertencia en el espectrofotómetro:</b><ul style="margin:4px 0 0;padding-left:18px">${pen.errMsg.map(m=>`<li>${m}</li>`).join('')}</ul></div>`
+    :'';
+}
+window.setMat=v=>{cell.mat=v;renderSpecControls();drawSpec()};
+window.setClean=v=>{cell.clean=v;renderSpecControls();drawSpec()};
+window.toggleLid=()=>{cell.lid=!cell.lid;renderSpecControls();drawSpec()};
+
+function drawSpec(){
+  const idx=cell.sel,obj=getObjByIdx(idx),lab=getLabelByIdx(idx);
+  const cVal=idx===6?smp.t:obj.cr;
+  const beamCol=waveToColor(cfg.wave);
+  const previewA=sigAt(cVal,cfg.wave,false);
+  const transFrac=Math.max(0.08,Math.min(1,Math.pow(10,-previewA)));
+  const liqOpacity=idx===0?0.24:(0.22+0.76*(idx===6?smp.t/cfg.max:obj.c/cfg.max));
+  const liqCol=idx===0?'#bfe6ef':cfg.col;
+  const hasScatter=cell.rot||cell.clean!=='clean';
+
+  let s=`<defs>
+    <linearGradient id="instBody" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#e3edf5"/>
+      <stop offset="100%" stop-color="#b8cad8"/>
+    </linearGradient>
+    <linearGradient id="instDark" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#1a3347"/>
+      <stop offset="100%" stop-color="#0b1a27"/>
+    </linearGradient>
+    <pattern id="frostP" width="4" height="4" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="4" y2="4" stroke="#ffb85c" stroke-width="1" opacity="0.65"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="336" width="920" height="54" fill="#1e3242"/>
+  <line x1="0" x2="920" y1="336" y2="336" stroke="#3c6785" stroke-width="2"/>
+
+  <!-- 1. IZQUIERDA: GRADILLA CON LAS 7 CELDAS LISTAS -->
+  <g transform="translate(14,16)">
+    <rect x="0" y="0" width="236" height="312" rx="10" fill="#091926" stroke="#27506a" stroke-width="1.5"/>
+    <text x="118" y="22" fill="#eef6fa" font-weight="700" font-size="12" text-anchor="middle">1. GRADILLA DE CELDAS</text>
+    <text x="118" y="38" fill="#9fb9c8" font-size="10.5" text-anchor="middle">Haz clic para meter la celda al equipo</text>`;
+
+  [0,1,2,3,4,5,6].forEach(k=>{
+    const colIdx=k<4?k:k-4;
+    const rowIdx=k<4?0:1;
+    const gx=colIdx*54 + (rowIdx===1?26:0) + 18;
+    const gy=rowIdx===0?56:178;
+    const o=getObjByIdx(k);
+    const isSelected=cell.sel===k;
+    const cFill=k===0?'#bfe6ef':cfg.col;
+    const op=k===0?0.26:(0.22+0.76*(k===6?smp.t/cfg.max:o.c/cfg.max));
+    const nReps=o.reps.filter(Number.isFinite).length;
+
+    s+=`<g class="cuv-slot" transform="translate(${gx},${gy})" onclick="selectCell(${k})">
+      <rect x="-4" y="-6" width="44" height="106" rx="6" fill="${isSelected?'#153e5c':'transparent'}" stroke="${isSelected?'#43dcff':'transparent'}" stroke-width="1.5"/>
+      <rect x="6" y="4" width="24" height="66" rx="2" fill="#bfe6ef18" stroke="${isSelected?'#43dcff':'#b8d8e8'}" stroke-width="${isSelected?2:1.4}" stroke-dasharray="${isSelected?'3 2':'none'}" opacity="${isSelected?0.45:1}"/>
+      <rect x="8" y="20" width="20" height="48" fill="${cFill}" opacity="${isSelected?op*0.35:op}"/>
+      <polygon points="9,10 14,7 14,13" fill="#43dcff" opacity="0.85"/>
+      <text x="18" y="84" fill="${isSelected?'#43dcff':'#eef6fa'}" font-weight="700" font-size="9.5" text-anchor="middle">${k===6?'Muestra':o.id}</text>
+      <text x="18" y="95" fill="${nReps?'#a6e66a':'#9fb9c8'}" font-size="8.5" text-anchor="middle">${isSelected?'En equipo':(nReps?'✓ ('+nReps+')':(k===0?'Blanco':g(o.c)))}</text>
+    </g>`;
+  });
+
+  s+=`<rect x="14" y="126" width="208" height="7" rx="3" fill="#234257"/>
+      <rect x="14" y="248" width="208" height="7" rx="3" fill="#234257"/>
+  </g>
+
+  <!-- 2. CENTRO: ESPECTROFOTÓMETRO EN LA MESADA -->
+  <g transform="translate(264,16)">
+    <text x="165" y="14" fill="#eef6fa" font-weight="700" font-size="13" text-anchor="middle">2. ESPECTROFOTÓMETRO</text>
+
+    <path d="M18 145 L42 92 H288 L312 145 Z" fill="#d0dfe9" stroke="#5c829c" stroke-width="1.5"/>
+    <rect x="14" y="142" width="302" height="184" rx="12" fill="url(#instBody)" stroke="#5c829c" stroke-width="2"/>
+    <rect x="26" y="324" width="42" height="8" rx="3" fill="#0d1b26"/>
+    <rect x="262" y="324" width="42" height="8" rx="3" fill="#0d1b26"/>
+    <rect x="28" y="154" width="76" height="44" rx="6" fill="#071521" stroke="#3a6784" stroke-width="1.5"/>
+    <text x="66" y="171" fill="#43dcff" font-size="8" font-weight="700" text-anchor="middle">LECTURA (AU)</text>
+    <text x="66" y="188" fill="#a6e66a" font-family="monospace" font-weight="700" font-size="13" text-anchor="middle">${previewA.toFixed(3)}</text>
+    <circle cx="38" cy="212" r="4.5" fill="#a6e66a"/>
+    <text x="48" y="216" fill="#173040" font-size="9.5" font-weight="700">${cfg.wave} nm</text>
+
+    <rect x="114" y="148" width="188" height="162" rx="8" fill="url(#instDark)" stroke="#2c5978" stroke-width="2"/>
+    <text x="208" y="165" fill="#9fb9c8" font-size="9.5" font-weight="600" text-anchor="middle">COMPARTIMENTO PORTACELDAS</text>
+
+    <g transform="translate(124,205)">
+      <rect width="34" height="52" rx="5" fill="#10283b" stroke="#3a6784"/>
+      <circle cx="17" cy="22" r="10" fill="${beamCol}" opacity="0.35"/>
+      <circle cx="17" cy="22" r="5" fill="#fff" stroke="${beamCol}" stroke-width="2"/>
+      <text x="17" y="45" fill="#cfe3ee" font-size="8" text-anchor="middle">Fuente</text>
+    </g>
+
+    <rect x="158" y="224" width="32" height="7" fill="${beamCol}" opacity="0.95"/>
+
+    <g transform="translate(190,174)">
+      <rect x="-5" y="24" width="46" height="88" rx="5" fill="#163144" stroke="#528bb0" stroke-width="1.8"/>
+      <rect x="3" y="6" width="30" height="96" rx="2.5" fill="#bfe6ef22" stroke="${cell.mat==='quartz'?'#7ce8ff':cell.mat==='glass'?'#b9d8e6':'#ffd280'}" stroke-width="2.2"/>
+      <rect x="5" y="28" width="26" height="72" fill="${liqCol}" opacity="${liqOpacity}"/>
+      <path d="M5 28 Q18 32 31 28" fill="none" stroke="#eaffff" stroke-width="1.3"/>
+      <polygon points="7,14 13,11 13,17" fill="#43dcff"/>
+      ${cell.clean==='print'?`<ellipse cx="18" cy="54" rx="6" ry="9" fill="none" stroke="#ffb85c" stroke-width="1.3" stroke-dasharray="2 1"/>`:''}
+      ${cell.clean==='bubbles'?`<circle cx="14" cy="52" r="2.8" fill="#fff8"/><circle cx="22" cy="58" r="3.2" fill="#fff8"/>`:''}
+      <rect x="5" y="50" width="26" height="7" fill="${beamCol}" opacity="${0.35+0.55*transFrac}"/>
+      ${hasScatter?`<g stroke="${beamCol}" stroke-width="1.5" stroke-dasharray="3 2"><line x1="18" y1="53" x2="-12" y2="28"/><line x1="18" y1="53" x2="46" y2="26"/><line x1="18" y1="53" x2="46" y2="82"/></g>`:''}
+    </g>
+
+    <rect x="231" y="${227.5-Math.max(1.5,3.5*transFrac)}" width="30" height="${Math.max(3,7*transFrac)}" fill="${beamCol}" opacity="${Math.max(0.22,transFrac)}"/>
+
+    <g transform="translate(261,205)">
+      <rect width="32" height="52" rx="5" fill="#10283b" stroke="#3a6784"/>
+      <rect x="4" y="12" width="7" height="28" rx="1.5" fill="#43dcff"/>
+      <text x="18" y="45" fill="#a6e66a" font-size="7.5" text-anchor="middle">Detector</text>
+    </g>
+
+    <g id="specLid" transform="${cell.lid?'':'rotate(-32 114 140)'}">
+      <path d="M112 142 L126 106 H292 L298 142 Z" fill="#1c3b52" stroke="#43dcff" stroke-width="1.8"/>
+      <rect x="186" y="112" width="44" height="7" rx="3.5" fill="#43dcff"/>
+      <text x="208" y="134" fill="#eef6fa" font-size="9.5" font-weight="600" text-anchor="middle">${cell.lid?'CUBIERTA CERRADA':'CUBIERTA ABIERTA'}</text>
+    </g>
+  </g>
+
+  <path d="M566 290 C585 290, 585 315, 608 315" fill="none" stroke="#43dcff" stroke-width="3"/>
+
+  <!-- 3. DERECHA: COMPUTADORA DE LABORATORIO MOSTRANDO EL ESPECTRO -->
+  <g transform="translate(598,16)">
+    <text x="154" y="14" fill="#eef6fa" font-weight="700" font-size="13" text-anchor="middle">3. COMPUTADORA (ESPECTRO EN VIVO)</text>
+
+    <rect x="6" y="26" width="296" height="236" rx="10" fill="#162836" stroke="#4d7c99" stroke-width="2.5"/>
+    <rect x="15" y="35" width="278" height="212" rx="5" fill="#04101a" stroke="#1f4257" stroke-width="1"/>
+    <rect x="15" y="35" width="278" height="20" rx="4" fill="#0e2a3d"/>
+    <circle cx="25" cy="45" r="3.5" fill="#ff72bb"/>
+    <circle cx="35" cy="45" r="3.5" fill="#ffb85c"/>
+    <circle cx="45" cy="45" r="3.5" fill="#a6e66a"/>
+    <text x="154" y="49" fill="#eef6fa" font-size="9" font-weight="700" text-anchor="middle">Espectro de absorción · ${cfg.wave} nm</text>
+
+    ${buildMonitorSpectrumSVG(25,62,258,136,idx,cVal,previewA,beamCol)}
+
+    <rect x="22" y="204" width="264" height="36" rx="4" fill="#081c2b" stroke="#1b4360"/>
+    <text x="30" y="219" fill="#9fb9c8" font-size="9">Celda: <tspan fill="#eef6fa" font-weight="700">${lab}</tspan></text>
+    <text x="30" y="233" fill="#9fb9c8" font-size="9">Máximo: <tspan fill="#43dcff" font-weight="700">${cfg.lmax} nm</tspan> | Transmitancia: <tspan fill="#ffb85c" font-weight="700">${(transFrac*100).toFixed(1)}%</tspan></text>
+    <text x="278" y="228" fill="#a6e66a" font-family="monospace" font-weight="700" font-size="14" text-anchor="end">${previewA.toFixed(3)} AU</text>
+
+    <rect x="132" y="262" width="44" height="36" fill="#8ea6b8" stroke="#4d7c99"/>
+    <path d="M92 298 H216 L228 310 H80 Z" fill="#b8cad8" stroke="#4d7c99"/>
+    <rect x="58" y="314" width="192" height="10" rx="3" fill="#d0dfe9" stroke="#5c829c"/>
+  </g>`;
+
+  $('specSvg').innerHTML=s;
+  drawLiveSubPlot();
+}
+
+function buildMonitorSpectrumSVG(x0,y0,W,H,activeIdx,activeC,activeA,beamCol){
+  const L=x0+26,R=x0+W-8,T=y0+8,B=y0+H-18;
+  const wMin=220,wMax=880;
+  const X=w=>L+(w-wMin)/(wMax-wMin)*(R-L);
+  const maxA=Math.max(1.25,sigAt(cfg.max,cfg.lmax,false)*1.15);
+  const Y=a=>B-Math.min(maxA,Math.max(0,a))/maxA*(B-T);
+
+  let out=`<line x1="${L}" x2="${R}" y1="${B}" y2="${B}" stroke="#27506a"/>
+           <line x1="${L}" x2="${L}" y1="${T}" y2="${B}" stroke="#27506a"/>
+           <text x="${L-4}" y="${B+3}" fill="#9fb9c8" font-size="8" text-anchor="end">0</text>
+           <text x="${L-4}" y="${T+6}" fill="#9fb9c8" font-size="8" text-anchor="end">${maxA.toFixed(1)}</text>
+           <text x="${X(300)}" y="${B+11}" fill="#9fb9c8" font-size="7.5" text-anchor="middle">300</text>
+           <text x="${X(500)}" y="${B+11}" fill="#9fb9c8" font-size="7.5" text-anchor="middle">500</text>
+           <text x="${X(700)}" y="${B+11}" fill="#9fb9c8" font-size="7.5" text-anchor="middle">700 nm</text>`;
+
+  lv.forEach((l,i)=>{
+    if(l.reps.some(Number.isFinite)&&i!==activeIdx){
+      let pts=[];
+      for(let w=wMin;w<=wMax;w+=16){
+        pts.push(`${X(w).toFixed(1)},${Y(sigAt(l.cr,w,false)).toFixed(1)}`);
+      }
+      out+=`<polyline fill="none" stroke="#43dcff55" stroke-width="1.2" points="${pts.join(' ')}"/>`;
+    }
+  });
+
+  let actPts=[];
+  for(let w=wMin;w<=wMax;w+=12){
+    actPts.push(`${X(w).toFixed(1)},${Y(sigAt(activeC,w,false)).toFixed(1)}`);
+  }
+  out+=`<polyline fill="none" stroke="#43dcff" stroke-width="2" points="${actPts.join(' ')}"/>`;
+  out+=`<line x1="${X(cfg.wave)}" x2="${X(cfg.wave)}" y1="${T}" y2="${B}" stroke="${beamCol}" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+  out+=`<circle cx="${X(cfg.wave)}" cy="${Y(activeA)}" r="4" fill="${beamCol}" stroke="#fff" stroke-width="1"/>`;
+  return out;
+}
+
+function drawLiveSubPlot(){
+  const idx=cell.sel,obj=getObjByIdx(idx),cVal=idx===6?smp.t:obj.cr;
+  const W=520,H=230,L=46,R=16,T=16,B=34;
+  const w0=220,w1=890;
+  const X=w=>L+(w-w0)/(w1-w0)*(W-L-R);
+  const maxA=Math.max(1.25,sigAt(cfg.max,cfg.lmax,false)*1.15);
+  const Y=a=>H-B-Math.min(maxA,Math.max(0,a))/maxA*(H-T-B);
+
+  $('liveTitle').textContent=`Espectro de absorción · ${getLabelByIdx(idx)}`;
+  $('liveSub').textContent=`Máximo de absorción = ${cfg.lmax} nm | Longitud de onda seleccionada = ${cfg.wave} nm`;
+  if($('waveSlider'))$('waveSlider').value=cfg.wave;
+
+  let curves='';
+  lv.slice(1).forEach((l,k)=>{
+    const isMeasured=l.reps.some(Number.isFinite);
+    const isAct=(k+1)===idx;
+    if(isMeasured||isAct){
+      let pts=[];
+      for(let w=w0;w<=w1;w+=10){
+        pts.push(`${X(w).toFixed(1)},${Y(sigAt(l.cr,w,false)).toFixed(1)}`);
+      }
+      curves+=`<polyline fill="none" stroke="${isAct?'#43dcff':'#43dcff66'}" stroke-width="${isAct?2.6:1.4}" points="${pts.join(' ')}"/>`;
+      const peakY=Y(sigAt(l.cr,cfg.lmax,false));
+      curves+=`<text x="${X(cfg.lmax)+6}" y="${peakY+3}" fill="${isAct?'#43dcff':'#9fb9c8'}" font-size="9" font-weight="${isAct?700:400}">${l.id}</text>`;
+    }
+  });
+
+  if(idx===0||idx===6){
+    let pts=[];
+    for(let w=w0;w<=w1;w+=10){
+      pts.push(`${X(w).toFixed(1)},${Y(sigAt(cVal,w,false)).toFixed(1)}`);
+    }
+    curves+=`<polyline fill="none" stroke="${idx===6?'#a6e66a':'#eef6fa'}" stroke-width="2.5" stroke-dasharray="${idx===6?'5 3':'none'}" points="${pts.join(' ')}"/>`;
+  }
+
+  const curA=sigAt(cVal,cfg.wave,false);
+  const col=waveToColor(cfg.wave);
+
+  $('livePlot').innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="plot" role="img" aria-label="Espectro de absorción ampliado con curvas superpuestas">
+    <line class="gr" x1="${L}" x2="${W-R}" y1="${Y(0)}" y2="${Y(0)}"/>
+    <line class="gr" x1="${L}" x2="${W-R}" y1="${Y(maxA/2)}" y2="${Y(maxA/2)}"/>
+    <line class="gr" x1="${L}" x2="${W-R}" y1="${Y(maxA)}" y2="${Y(maxA)}"/>
+    <text class="tk" x="${L-6}" y="${Y(0)+4}" text-anchor="end">0,0</text>
+    <text class="tk" x="${L-6}" y="${Y(maxA/2)+4}" text-anchor="end">${(maxA/2).toFixed(2)}</text>
+    <text class="tk" x="${L-6}" y="${Y(maxA)+4}" text-anchor="end">${maxA.toFixed(2)}</text>
+    ${[250,350,450,550,650,750,850].map(w=>`<text class="tk" x="${X(w)}" y="${H-10}" text-anchor="middle">${w}</text>`).join('')}
+    <text class="ax" x="${(L+W-R)/2}" y="${H-1}" text-anchor="middle">Longitud de onda (nm)</text>
+    <text class="ax" transform="translate(13 ${(T+H-B)/2}) rotate(-90)" text-anchor="middle">Absorbancia (AU)</text>
+    <line x1="${X(cfg.lmax)}" x2="${X(cfg.lmax)}" y1="${T}" y2="${H-B}" stroke="#9fb9c8" stroke-dasharray="3 3"/>
+    <text x="${X(cfg.lmax)}" y="${T+10}" fill="#9fb9c8" font-size="10" text-anchor="middle">Máximo (${cfg.lmax} nm)</text>
+    ${curves}
+    <line x1="${X(cfg.wave)}" x2="${X(cfg.wave)}" y1="${T}" y2="${H-B}" stroke="${col}" stroke-width="2"/>
+    <circle cx="${X(cfg.wave)}" cy="${Y(curA)}" r="5" fill="${col}" stroke="#fff" stroke-width="1.5"/>
+  </svg>`;
+
+  const diff=Math.abs(cfg.wave-cfg.lmax);
+  $('liveHint').innerHTML=diff<=8
+    ?`<span class="ok">✓ Longitud de onda óptima (${cfg.lmax} nm): medir en el pico de máxima absorción proporciona la mayor sensibilidad y minimiza errores por pequeñas variaciones del monocromador.</span>`
+    :`<span style="color:var(--or)">⚠ Estás midiendo a ${cfg.wave} nm, lejos del máximo de absorción (${cfg.lmax} nm). Presiona «Fijar en el máximo de absorción» para trabajar en la cima de la banda.</span>`;
+}
+
+$('waveSlider').oninput=e=>{
+  cfg.wave=+e.target.value;$('wave').value=cfg.wave;
+  drawSpec();
+};
+$('btnSetLmax').onclick=()=>{
+  cfg.wave=cfg.lmax;$('wave').value=cfg.lmax;$('waveSlider').value=cfg.lmax;
+  drawSpec();
+};
+
+function updateLCD(rawVal,label){
+  const corVal=blank!=null?rawVal-blank:null;
+  $('read').textContent=rawVal.toFixed(4)+' AU';
+  $('readSub').textContent=label+' · Absorbancia bruta';
+  $('readCor').textContent=corVal!=null?corVal.toFixed(4)+' AU':'—';
+  $('readZero').textContent=blank!=null?`Blanco restado (${blank.toFixed(4)} AU)`:'Sin ajuste de blanco';
+  const Tpct=Math.pow(10,-rawVal)*100;
+  $('readT').textContent=Tpct.toFixed(1)+' %';
+  $('readRatio').textContent=`Fracción transmitida = ${(Tpct/100).toFixed(3)}`;
+  $('readCell').textContent=label;
+  $('readWave').textContent=`Longitud de onda = ${cfg.wave} nm`;
+}
+
+function checkBadOptics(){
+  const pen=opticalPenalties(cfg.wave);
+  if(pen.errMsg.length||cell.clean!=='clean')cell.hadError=true;
+}
+
+$('blank').onclick=()=>{
+  ensureCuvettesReady();
+  selectCell(0);
+  checkBadOptics();
+  blank=sig(0);
+  lv[0].reps=[blank];
+  updateLCD(blank,'Estándar 0 (Blanco)');
+  say('✓ Celda del Estándar 0 (Blanco) insertada en el equipo y fijada como referencia de cero (100 por ciento de transmitancia, 0,0000 AU). Ahora mide los Estándares 1 a 5.');
+  renderRack();drawSpec();table();
+};
+
+$('measCur').onclick=()=>{
+  ensureCuvettesReady();
+  const idx=cell.sel;
+  if(idx===0)return $('blank').onclick();
+  if(blank==null)return say('Primero presiona «1. Insertar Estándar 0 y ajustar el cero (Blanco)».');
+  const obj=getObjByIdx(idx);
+  checkBadOptics();
+  const val=sig(idx===6?smp.t*(1+gauss()*.0038):obj.cr);
+  if(obj.reps.filter(Number.isFinite).length>=3)obj.reps.shift();
+  obj.reps.push(val);
+  updateLCD(val,getLabelByIdx(idx));
+  say(`✓ Celda de ${getLabelByIdx(idx)} medida en el equipo: absorbancia bruta = ${val.toFixed(4)} AU (absorbancia corregida = ${(val-blank).toFixed(4)} AU).`);
+  renderRack();drawSpec();table();
+};
+
+function mLevel(l,idx){
+  const n=+$('nrep').value;
+  checkBadOptics();
+  while(l.reps.filter(Number.isFinite).length<n)l.reps.push(sig(l.cr));
+  cell.sel=idx;
+  updateLCD(l.reps[l.reps.length-1],l.id);
+}
+
+$('one').onclick=()=>{
+  ensureCuvettesReady();
+  if(blank==null)return say('Primero mide el blanco (Estándar 0) con el botón «1. Insertar Estándar 0 y ajustar el cero (Blanco)».');
+  const i=lv.findIndex((l,idx)=>idx>0&&l.reps.filter(Number.isFinite).length<+$('nrep').value);
+  if(i<0)return say('Todos los estándares ya fueron medidos. Ahora presiona «🧪 Medir muestra problema».');
+  mLevel(lv[i],i);
+  say(`✓ Celda de ${lv[i].id} (${g(lv[i].c)} ${cfg.unit}) insertada en el espectrofotómetro y registrada en la computadora.`);
+  renderRack();drawSpec();table();
+};
+
+$('all').onclick=()=>{
+  ensureCuvettesReady();
+  if(blank==null){
+    blank=sig(0);lv[0].reps=[blank];
+  }
+  lv.slice(1).forEach((l,i)=>mLevel(l,i+1));
+  say('✓ Se insertaron y midieron todas las celdas de los Estándares 1 a 5 en el espectrofotómetro. Observa el espectro superpuesto abajo.');
+  renderRack();drawSpec();table();
+};
+
+$('randAll').onclick=()=>{
+  ensureCuvettesReady();
+  if(blank==null){
+    blank=sig(0);lv[0].reps=[blank];
+  }
+  const p=lv.map((l,i)=>({l,i})).slice(1);
+  for(let i=p.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]]}
+  cell.randOrder=true;
+  p.forEach(x=>mLevel(x.l,x.i));
+  say(`✓ Estándares medidos en orden aleatorio: ${p.map(x=>x.l.id).join(' → ')}.`);
+  renderRack();drawSpec();table();
+};
+
+$('smpBtn').onclick=()=>{
+  ensureCuvettesReady();
+  if(blank==null){
+    blank=sig(0);lv[0].reps=[blank];
+  }
+  const n=+$('nrep').value;
+  checkBadOptics();
+  while(smp.reps.filter(Number.isFinite).length<n)smp.reps.push(sig(smp.t*(1+gauss()*.0038)));
+  selectCell(6);
+  updateLCD(smp.reps[smp.reps.length-1],'Muestra problema');
+  say('✓ Muestra problema medida en el espectrofotómetro. Pasa a «4. Analizar curva» para calcular su concentración.');
+  renderRack();drawSpec();table();
+};
+
+$('clear').onclick=()=>{
+  lv.forEach(l=>l.reps=[]);smp.reps=[];smp.reveal=false;blank=null;cell.hadError=false;cell.randOrder=false;
+  $('read').textContent='—';$('readSub').textContent='Sin lectura';$('readCor').textContent='—';$('readT').textContent='—';
+  say('Lecturas reiniciadas. Las celdas siguen listas en la gradilla.');
+  renderRack();drawSpec();table();
+};
+
+const cr=o=>o.reps.filter(Number.isFinite).map(v=>v-(blank||0));
+
+function table(){
+  const inp=(a,j,v)=>`<td><input aria-label="${a==='b'?'Blanco':a==='s'?'Muestra':lv[a].id}, réplica ${j+1}" data-a="${a}" data-j="${j}" type="number" step="any" value="${v!==undefined&&v!==null?v:''}"></td>`;
+  const row=(id,c,a,o,idx)=>{
+    const y=cr(o);
+    return `<tr class="${cell.sel===idx?'active-row':''}">
+      <td><b>${id}</b></td>
+      <td>${c}</td>
+      ${[0,1,2].map(j=>inp(a,j,o.reps[j])).join('')}
+      <td><b>${y.length?g(mean(y))+' AU':'—'}</b></td>
+      <td>${y.length>1&&mean(y)>0?(sd(y)/mean(y)*100).toFixed(2)+' %':'—'}</td>
+      <td><button class="btn" style="padding:4px 8px;font-size:11.5px" onclick="selectCell(${idx})">Meter al equipo</button></td>
+    </tr>`;
+  };
+  $('mt').innerHTML=`<tr class="${cell.sel===0?'active-row':''}"><td><b>Estándar 0 (Blanco)</b></td><td>0 ${cfg.unit}</td>${inp('b',0,blank)}<td colspan="4" style="text-align:left;color:var(--mut)">Ajuste a cero (señal de fondo restada)</td><td><button class="btn" style="padding:4px 8px;font-size:11.5px" onclick="selectCell(0)">Meter al equipo</button></td></tr>`
+    +lv.slice(1).map((l,i)=>row(l.id,g(l.c)+' '+cfg.unit,i+1,l,i+1)).join('')
+    +row('Muestra problema','Desconocida ('+cfg.unit+')','s',smp,6);
+  learnMed();guide();
+}
+
+$('mt').onchange=e=>{
+  const t=e.target,a=t.dataset.a;if(!a)return;
+  const v=t.value===''?undefined:+t.value;
+  if(a==='b'){blank=(v!==undefined&&!Number.isNaN(v))?v:null;lv[0].reps=blank!==null?[blank]:[]}
+  else(a==='s'?smp:lv[+a]).reps[+t.dataset.j]=v;
+  renderRack();drawSpec();table();
+};
+
+/* ---------- 4. REGRESIÓN LINEAL, ANÁLISIS DE LA VARIANZA Y BANDAS DE CONFIANZA ---------- */
+function reg(){
+  const p=[];lv.slice(1).forEach(l=>cr(l).forEach(y=>p.push({c:l.c,y})));
+  const n=p.length;if(n<4||new Set(p.map(a=>a.c)).size<3)return null;
+  const xb=mean(p.map(a=>a.c)),yb=mean(p.map(a=>a.y)),Sxx=p.reduce((s,a)=>s+(a.c-xb)**2,0);
+  const m=p.reduce((s,a)=>s+(a.c-xb)*(a.y-yb),0)/Sxx,b=yb-m*xb;
+  p.forEach(a=>a.r=a.y-(m*a.c+b));
+  const sse=p.reduce((s,a)=>s+a.r**2,0),sst=p.reduce((s,a)=>s+(a.y-yb)**2,0),ssr=Math.max(0,sst-sse);
+  const df=n-2,s=Math.sqrt(sse/df),r2=1-sse/sst,r=Math.sign(m)*Math.sqrt(Math.max(0,r2));
+  const adjR2=1-(1-r2)*(n-1)/df;
+  const seM=s/Math.sqrt(Sxx),seB=s*Math.sqrt(1/n+xb*xb/Sxx);
+  const F=ssr/(sse/df),tB=Math.abs(b)/seB,tM=Math.abs(m)/seM;
+  return{p,n,xb,yb,Sxx,m,b,s,r,r2,adjR2,seM,seB,df,sse,sst,ssr,F,tB,tM};
+}
+
+function pred(f){
+  const y=cr(smp);if(!f||!y.length)return null;
+  const y0=mean(y),k=y.length,x0=(y0-f.b)/f.m;
+  const sx0=f.s/Math.abs(f.m)*Math.sqrt(1/k+1/f.n+(y0-f.yb)**2/(f.m*f.m*f.Sxx));
+  return{y0,x0,sx0,ci:t95(f.df)*sx0,k};
+}
+
+function plot(o){
+  const W=560,H=o.H,L=62,R=16,T=14,B=42,X=v=>L+(v-o.x0)/(o.x1-o.x0)*(W-L-R),Y=v=>H-B-(v-o.y0)/(o.y1-o.y0)*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="plot" role="img" aria-label="${o.al}">`;
+  for(let i=0;i<=4;i++){
+    const xv=o.x0+(o.x1-o.x0)*i/4,yv=o.y0+(o.y1-o.y0)*i/4;
+    s+=`<line class="gr" x1="${L}" x2="${W-R}" y1="${Y(yv)}" y2="${Y(yv)}"/><text class="tk" x="${L-8}" y="${Y(yv)+4}" text-anchor="end">${g(yv)}</text><text class="tk" x="${X(xv)}" y="${H-B+16}" text-anchor="middle">${g(xv)}</text>`;
+  }
+  return s+`<text class="ax" x="${(L+W-R)/2}" y="${H-6}" text-anchor="middle">${o.xl}</text><text class="ax" transform="translate(14 ${(T+H-B)/2}) rotate(-90)" text-anchor="middle">${o.yl}</text>`+o.draw(X,Y)+'</svg>';
+}
+
+$('chkCI').onchange=$('chkPI').onchange=()=>analysis();
+
+function analysis(){
+  const f=reg();
+  if(!f){
+    $('chart').innerHTML='<p class="mut">Mide al menos 3 niveles de concentración en la pestaña «3. Medir en espectrofotómetro» para trazar la curva de calibración.</p>';
+    $('resid').innerHTML='';$('anRes').innerHTML='<p class="mut">Sin datos suficientes.</p>';learnAn();guide();return;
+  }
+  const P=pred(f),x1=cfg.max*1.05,yt=Math.max(...f.p.map(a=>a.y),f.m*x1+f.b)*1.12,y0=Math.min(0,...f.p.map(a=>a.y))*1.2;
+  const showCI=$('chkCI').checked,showPI=$('chkPI').checked;
+
+  $('chart').innerHTML=plot({
+    H:310,x0:0,x1,y0,y1:yt,
+    xl:`Concentración de ${cfg.name} (${cfg.unit})`,
+    yl:`Absorbancia corregida a ${cfg.wave} nm (AU)`,
+    al:'Curva de calibración espectrofotométrica con recta de regresión y bandas de confianza',
+    draw:(X,Y)=>{
+      let s='';
+      if(showCI){
+        let top=[],bot=[];
+        const tVal=t95(f.df);
+        for(let i=0;i<=40;i++){
+          const xv=x1*i/40,yh=f.m*xv+f.b;
+          const cL=tVal*f.s*Math.sqrt(1/f.n+(xv-f.xb)**2/f.Sxx);
+          top.push(`${X(xv).toFixed(1)},${Y(yh+cL).toFixed(1)}`);
+          bot.unshift(`${X(xv).toFixed(1)},${Y(yh-cL).toFixed(1)}`);
+        }
+        s+=`<polygon class="ci-area" points="${top.concat(bot).join(' ')}"/>`;
+      }
+      s+=`<line class="fit" x1="${X(0)}" y1="${Y(f.b)}" x2="${X(x1)}" y2="${Y(f.m*x1+f.b)}"/>`;
+      s+=f.p.map(a=>`<circle class="pt" cx="${X(a.c)}" cy="${Y(a.y)}" r="4.5"/>`).join('');
+      s+=`<circle cx="${X(f.xb)}" cy="${Y(f.yb)}" r="3.5" fill="none" stroke="#43dcff" stroke-width="1.5"/>`;
+      if(P&&P.x0>0&&showPI){
+        s+=`<path class="smp" d="M${X(0)} ${Y(P.y0)}H${X(P.x0)}V${Y(y0)}"/>`;
+        const xLow=Math.max(0,P.x0-P.ci),xHigh=Math.min(x1,P.x0+P.ci);
+        s+=`<line class="pi-line" x1="${X(xLow)}" x2="${X(xHigh)}" y1="${Y(y0)-8}" y2="${Y(y0)-8}"/>`;
+        s+=`<circle class="sm" cx="${X(P.x0)}" cy="${Y(P.y0)}" r="5.5"/>`;
+      }
+      return s;
+    }
+  });
+
+  const rm=Math.max(...f.p.map(a=>Math.abs(a.r)),2.2*f.s)*1.25;
+  $('resid').innerHTML=plot({
+    H:195,x0:0,x1,y0:-rm,y1:rm,
+    xl:`Concentración (${cfg.unit})`,yl:'Residuo (AU)',al:'Gráfico de residuos',
+    draw:(X,Y)=>`<line class="zero" x1="${X(0)}" x2="${X(x1)}" y1="${Y(0)}" y2="${Y(0)}"/><line class="band" x1="${X(0)}" x2="${X(x1)}" y1="${Y(2*f.s)}" y2="${Y(2*f.s)}"/><line class="band" x1="${X(0)}" x2="${X(x1)}" y1="${Y(-2*f.s)}" y2="${Y(-2*f.s)}"/>`+f.p.map(a=>`<circle class="pt" cx="${X(a.c)}" cy="${Y(a.r)}" r="4"/>`).join('')
+  });
+
+  const LOD=3.3*f.s/f.m,LOQ=10*f.s/f.m,tCrit=t95(f.df);
+  const M=(l,v,u)=>`<div class="metric"><small>${l}</small><strong>${v}</strong><em>${u}</em></div>`;
+  $('anRes').innerHTML=`<div class="metrics">
+    ${M('Pendiente (m)',g(f.m),'± '+g(f.seM)+' AU por '+cfg.unit)}
+    ${M('Ordenada al origen (b)',g(f.b),'± '+g(f.seB)+' AU')}
+    ${M('Coeficiente de correlación (r)',f.r.toFixed(5),'Coeficiente de determinación R² = '+f.r2.toFixed(5))}
+    ${M('R² ajustado',f.adjR2.toFixed(5),f.df+' grados de libertad ('+f.n+' lecturas)')}
+    ${M('Desviación estándar residual',g(f.s)+' AU','Estadístico F = '+g(f.F))}
+    ${M('Prueba t del intercepto','t = '+g(f.tB),f.tB<=tCrit?'Menor o igual a '+g(tCrit)+' (Pasa por cero)':'Mayor a '+g(tCrit)+' (Sesgo distinto de cero)')}
+    ${M('Límite de detección',g(LOD)+' '+cfg.unit,'3,3 × desviación residual / pendiente')}
+    ${M('Límite de cuantificación',g(LOQ)+' '+cfg.unit,'10 × desviación residual / pendiente')}
+  </div>
+  <p class="small">Ecuación de la recta ajustada: <b>Absorbancia = ${g(f.m)} × Concentración ${f.b>=0?'+ '+g(f.b):'− '+g(Math.abs(f.b))}</b>.</p>`
+  +(P?`<div class="result"><h3>Concentración de la muestra problema</h3>
+    <p>Absorbancia media corregida = <b>${g(P.y0)} AU</b> (${P.k} réplicas) → Concentración interpolada: <b>${g(P.x0)} ± ${g(P.ci)} ${cfg.unit}</b> (Intervalo de confianza del 95 por ciento, error estándar de predicción = ${g(P.sx0)} ${cfg.unit}).</p>
+    ${smp.reveal?`<p style="margin-top:6px;color:var(--gr)">Valor verdadero de la muestra: <b>${g(smp.t)} ${cfg.unit}</b> · Porcentaje de recuperación: <b>${(P.x0/smp.t*100).toFixed(1)} %</b>.</p>`:'<button class="btn pri" id="rev" style="margin-top:6px">Revelar concentración verdadera y porcentaje de recuperación</button>'}
+  </div>`:'<p class="mut">Mide la muestra problema en la pestaña «3. Medir en espectrofotómetro» para interpolar su concentración.</p>')
+  +`<div class="note">${f.tB<=tCrit?'La ordenada al origen es estadísticamente compatible con cero (la recta cumple la Ley de Beer–Lambert sin sesgo de fondo).':'La ordenada al origen difiere significativamente de cero: verifica el blanco o la limpieza de la celda.'} ${diag(f)}</div>`;
+
+  if($('rev'))$('rev').onclick=()=>{smp.reveal=true;analysis()};
+  learnAn();guide();
+}
+
+/* ---------- 5. CONTROL DE CALIDAD AUTOMÁTICO ---------- */
+function controls(){
+  const f=reg(),L=lv.slice(1).filter(l=>cr(l).length),Ls=[...L].sort((a,b)=>a.c-b.c),n=L.map(l=>cr(l).length),ys=L.flatMap(cr),P=pred(f),rsd=L.filter(l=>cr(l).length>=2).map(l=>sd(cr(l))/mean(cr(l))*100);
+  const cMin=Math.min(...lv.slice(1).map(l=>l.c)),cMax=Math.max(...lv.slice(1).map(l=>l.c));
+  let cv=0;if(f&&Ls.length>=5){const r=Ls.map(l=>mean(cr(l))-(f.m*l.c+f.b));cv=(r[0]+r[r.length-1])/2-r[Math.floor(r.length/2)]}
+  const R=(c,rdy)=>rdy?c:null;
+  return[
+    [blank!=null,'1. Blanco de reactivos (Estándar 0) medido y restado','Descuenta la absorbancia propia de la celda y del solvente utilizado.'],
+    [R(!cell.hadError,blank!=null||L.length>0),'2. Correcta manipulación de la celda en el espectrofotómetro','Celda limpia con papel suave sin pelusa, sin burbujas, tomada por sus caras opacas y medida con la cubierta del equipo cerrada.'],
+    [R(Math.abs(cfg.wave-cfg.lmax)<=12,true),'3. Medición en la longitud de onda de máxima absorción ('+cfg.lmax+' nm)','Maximiza la sensibilidad y disminuye desviaciones instrumentales.'],
+    [R(L.length>=5,L.length>0),'4. Al menos 5 estándares de concentración conocida','Permite modelar la recta de calibración y comprobar el cumplimiento de la Ley de Beer–Lambert.'],
+    [R(Math.min(...n)>=3,L.length>0),'5. Triplicados (3 réplicas) en cada nivel de concentración','Permiten evaluar la precisión fotométrica y estimar la desviación estándar en cada punto.'],
+    [R(Math.max(...rsd)<=5,rsd.length>0),'6. Precisión aceptable (Desviación estándar relativa porcentual menor o igual al 5 por ciento)','Garantiza una buena repetibilidad entre lecturas sucesivas.'],
+    [R(Math.min(...ys)>=.03&&Math.max(...ys)<=1.5,ys.length>0),'7. Absorbancias dentro del intervalo lineal óptimo (0,05 a 1,5 AU)','Evita el ruido excesivo a baja absorbancia y el efecto de la luz difusa a alta absorbancia.'],
+    [R(Boolean(f&&f.r2>=.995),!!f),'8. Coeficiente de determinación R² mayor o igual a 0,995','Indica un buen ajuste lineal en conjunto con la inspección visual del gráfico de residuos.'],
+    [R(Boolean(f&&Math.abs(cv)<=1.5*f.s/Math.sqrt(Math.min(...n))),!!f&&L.length>=5),'9. Residuos distribuidos al azar sin curvatura sistemática','Confirma la ausencia de desviaciones químicas o instrumentales a la linealidad.'],
+    [R(Boolean(f&&f.tB<=t95(f.df)),!!f),'10. Ordenada al origen estadísticamente compatible con cero','Demuestra ausencia de error sistemático constante en el blanco.'],
+    [R(Boolean(P&&P.x0>=cMin&&P.x0<=cMax),!!P),'11. Muestra problema interpolada dentro del intervalo calibrado','La concentración desconocida debe encontrarse entre el estándar de menor y el de mayor concentración.']
+  ];
+}
+
+function controlsView(){
+  const C=controls(),ok=C.filter(c=>c[0]===true).length;
+  $('ctlSum').textContent=`${ok} de ${C.length} criterios cumplidos en el análisis.`;
+  $('checks').innerHTML=C.map(c=>`<div class="chk ${c[0]===true?'ok':c[0]===false?'no':'wt'}"><b>${c[1]}</b><span>${c[2]}</span><em>${c[0]===true?'✓ Cumple':c[0]===false?'⚠ Revisar':'Pendiente'}</em></div>`).join('');
+  guide();
+}
+
+/* ---------- LECCIONES INTERACTIVAS Y AUTOCOMPROBACIÓN ---------- */
+const opened=new Set();
+function learn(el,items){$(el).innerHTML='<h2>Fundamentos teóricos y práctica guiada</h2>'+items.map(([k,t,h])=>`<details class="learn" data-k="${k}"${opened.has(k)?' open':''}><summary>${t}</summary><div>${h}</div></details>`).join('')}
+document.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.k)d.open?opened.add(d.dataset.k):opened.delete(d.dataset.k)},true);
+
+const QZ={
+  p:()=>{const l=lv[3],a=l.c*Vf/Cs;return{a,q:`Cálculo de dilución: ¿cuántos mL de solución madre (${g(Cs)} ${cfg.unit}) se deben pipetear para preparar ${Vf} mL del ${l.id} (${g(l.c)} ${cfg.unit})?`,e:`Volumen inicial = (Concentración final × Volumen final) / Concentración inicial = (${g(l.c)} × ${Vf}) / ${g(Cs)} = ${fm(a)} mL.`}},
+  b:()=>({a:qz.raw-qz.bl,q:`Corrección de blanco: si la celda del Estándar 0 mide ${qz.bl} AU y un estándar mide ${qz.raw} AU, ¿cuál es la absorbancia corregida?`,e:`${qz.raw} − ${qz.bl} = ${g(qz.raw-qz.bl)} AU.`}),
+  t:()=>({a:+(Math.pow(10,-0.5)*100).toFixed(1),q:`Transmitancia y absorbancia: si la lectura marca una absorbancia de 0,500 AU, ¿qué porcentaje de luz llega al detector (Porcentaje de transmitancia = 10 elevado a menos Absorbancia × 100)?`,e:`Porcentaje de transmitancia = 10⁻⁰,⁵⁰⁰ × 100 = 31,6 %.`}),
+  i:()=>{const f=reg();if(!f)return null;const y=+(f.yb*1.1).toPrecision(3),a=(y-f.b)/f.m;return{a,q:`Interpolación: con la recta Absorbancia = ${g(f.m)} × Concentración + ${g(f.b)}, ¿qué concentración (${cfg.unit}) tiene una muestra cuya absorbancia corregida es ${g(y)} AU?`,e:`Concentración = (Absorbancia − Ordenada al origen) / Pendiente = (${g(y)} − ${g(f.b)}) / ${g(f.m)} = ${g(a)} ${cfg.unit}.`}}
+};
+function quizHTML(k){const o=QZ[k]();return o?`<div class="quiz"><span>${o.q}</span><input id="q_${k}" type="number" step="any" aria-label="Tu respuesta"><button class="btn" onclick="chk('${k}')">Comprobar</button><span class="fb" id="fb_${k}"></span></div>`:''}
+function chk(k){const o=QZ[k](),v=parseFloat($('q_'+k).value),ok=Math.abs(v-o.a)<=Math.max(Math.abs(o.a)*.025,1e-4),f=$('fb_'+k);f.style.color=ok?'var(--gr)':'var(--or)';f.textContent=(ok?'✓ ¡Correcto! ':'Revisa el cálculo: ')+o.e}
+window.chk=chk;
+
+function learnPrep(){
+  const l=lv[3],V=l.c*Vf/Cs,u=cfg.unit,fd=Cs/l.c;
+  learn('lPrep',[
+    ['p1','1. Cálculo de diluciones y enrase al menisco',`<p>Cuando se toma una alícuota de una solución madre (patrón concentrado) y se diluye con solvente en un matraz aforado, la cantidad total de soluto permanece constante antes y después de diluir. Por ello se cumple la ecuación fundamental de dilución:</p><p class="fx">Concentración inicial (C₁) × Volumen inicial (V₁) = Concentración final (C₂) × Volumen final (V₂)</p><p>Donde <b>C₁</b> es la concentración de la solución madre, <b>V₁</b> es el volumen de alícuota que debemos medir con la pipeta, <b>C₂</b> es la concentración objetivo del estándar que deseamos preparar y <b>V₂</b> es el volumen final del matraz aforado. Despejando el volumen de alícuota necesario:</p><p class="fx">V₁ = (C₂ × V₂) / C₁</p><p>La relación entre la concentración inicial y la final se denomina <b>factor de dilución (FD = C₁ / C₂ = V₂ / V₁)</b>. Una vez transferida la alícuota al matraz aforado, se agrega solvente y se realiza el <b>enrase al aforo</b>: observando a la altura de los ojos para evitar el error de paralaje, se hace coincidir la parte inferior de la curva del menisco cóncavo exactamente con la línea de enrase del cuello del matraz y luego se homogeneiza por inversión.</p><div class="ex">Ejemplo en tu mesada: para preparar V₂ = ${Vf} mL del ${l.id} (C₂ = ${g(l.c)} ${u}) partiendo de la solución madre (C₁ = ${g(Cs)} ${u}), el volumen a pipetear es <b>V₁ = (${g(l.c)} × ${Vf}) / ${g(Cs)} = ${fm(V)} mL</b> (factor de dilución = ${g(fd)}) y se completa con ${cfg.matrix} hasta el aforo de ${Vf} mL.</div>${quizHTML('p')}`],
+    ['p2','2. Diluciones independientes en matraces frente a diluciones seriadas',`<p>En la mesada puedes alternar entre ambos procedimientos:</p><ul><li><b>Diluciones independientes:</b> Cada matraz se prepara directamente desde la solución madre con concentraciones equiespaciadas. De esta forma, un error de pipeteo en un matraz no se propaga a los demás estándares.</li><li><b>Diluciones seriadas:</b> Se transfiere una fracción de cada solución a la siguiente en serie. Si bien es frecuente en ensayos bioquímicos, acumula el error volumétrico y concentra los puntos cerca del origen, generando un alto efecto de apalancamiento en el estándar más concentrado.</li></ul>`],
+    ['p3','3. Selección y transparencia del solvente',`<p>El solvente debe disolver completamente al analito y ser transparente en el rango de longitud de onda de trabajo. Cada solvente posee una longitud de onda de corte por debajo de la cual absorbe fuertemente la radiación ultravioleta (por ejemplo, la acetona absorbe por debajo de 330 nm, mientras que el agua es transparente hasta los 190 nm).</p>`]
+  ]);
+}
+
+function learnMed(){
+  learn('lMed',[
+    ['m1','1. Manipulación de las celdas y cuidado de las ventanas ópticas',`<p>La celda posee dos paredes opuestas transparentes (ventanas ópticas por donde atraviesa el haz de luz) y dos lados opacos o esmerilados para sujetarla:</p><ul><li><b>Uso de guantes y sujeción por los lados opacos:</b> Las celdas solo deben tomarse por las paredes esmeriladas utilizando guantes para no depositar residuos grasos en el paso óptico.</li><li><b>Limpieza suave:</b> Antes de colocar la celda en el portaceldas, se utiliza papel suave sin detergentes ni lubricantes para retirar cualquier humedad o partícula.</li><li><b>Cubierta cerrada:</b> Durante las mediciones la cubierta del compartimento siempre debe permanecer cerrada para impedir el ingreso de radiación externa.</li></ul>${quizHTML('t')}`],
+    ['m2','2. El espectro de absorción y la elección de la longitud de onda máxima',`<p>Al realizar un barrido espectral se grafica la absorbancia en función de la longitud de onda. Todas las diluciones del mismo analito presentan su pico máximo exactamente en la misma longitud de onda (<b>${cfg.lmax} nm</b> para ${cfg.name}), incrementando su altura de manera proporcional a la concentración.</p><p>Seleccionar la longitud de onda de máxima absorción brinda la mayor sensibilidad analítica y minimiza los errores asociados al ancho de banda espectral del monocromador.</p>${quizHTML('b')}`]
+  ]);
+}
+
+function diag(f){
+  const L=lv.slice(1).filter(l=>cr(l).length).sort((a,b)=>a.c-b.c);if(L.length<5)return'Mide los 5 niveles para evaluar el patrón de los residuos.';
+  const e=l=>cr(l).map(y=>y-(f.m*l.c+f.b)),r=L.map(l=>mean(e(l))),cv=(r[0]+r[r.length-1])/2-r[Math.floor(r.length/2)];
+  if(Math.abs(cv)>1.5*f.s/Math.sqrt(Math.min(...L.map(l=>cr(l).length))))return'Los residuos muestran curvatura sistemática: sugiere desviación a la Ley de Beer–Lambert o presencia de luz difusa.';
+  return'Los residuos se reparten aleatoriamente alrededor de cero, confirmando el comportamiento lineal en todo el intervalo de concentraciones.';
+}
+
+function learnAn(){
+  const f=reg(),X=v=>f?g(v):'—';
+  learn('lAn',[
+    ['a1','1. Ajuste lineal de la Ley de Beer–Lambert',`<p>La regresión por mínimos cuadrados calcula la pendiente <b>m</b> y la ordenada al origen <b>b</b> que minimizan la suma de los cuadrados de los residuos.</p><div class="ex">En tu curva actual: pendiente = ${X(f&&f.m)} AU por ${cfg.unit}, ordenada al origen = ${X(f&&f.b)} AU, coeficiente de determinación R² = ${f?f.r2.toFixed(5):'—'}.</div>`],
+    ['a2','2. Interpolación de la muestra problema e intervalo de predicción',`<p>Con la absorbancia media corregida de la muestra desconocida, se despeja su concentración a partir de la ecuación de la recta:</p><p class="fx">Concentración = (Absorbancia media − Ordenada al origen) / Pendiente</p><p>Las bandas hiperbólicas alrededor de la recta muestran que la incertidumbre de predicción es mínima en el centro de la curva de calibración y aumenta hacia los extremos.</p>${quizHTML('i')}`]
+  ]);
+}
+
+function guide(){
+  if(!cfg)return;
+  const nP=lv.filter(l=>l.done).length,nM=lv.slice(1).filter(l=>cr(l).length).length,f=reg(),done=[true,nP===6,blank!=null&&nM>=5,!!f,controls().every(c=>c[0]===true)];
+  const T=['1. Diseñar','2. Preparar','3. Medir','4. Analizar','5. Controlar'].map((t,i)=>`<span class="chip${done[i]?' d':''}">${done[i]?'✓ ':''}${t}</span>`).join('');
+  const M={
+    inicio:'Selecciona el analito y el solvente (la longitud de onda óptima se carga automáticamente) y presiona «Configurar método e ir a preparar».',
+    preparacion:nP<6?`Presiona «Preparar siguiente estándar» o «Preparar toda la serie» para realizar el pipeteo y el enrase al menisco (${nP} de 6 listos). También puedes pasar directo a «3. Medir en espectrofotómetro».`:'¡Serie de estándares lista! Pasa a «3. Medir en espectrofotómetro» para colocar las celdas en el equipo.',
+    medicion:blank==null?'Las celdas están listas en la gradilla. Primero presiona «1. Insertar Estándar 0 y ajustar el cero (Blanco)» para llevar el blanco al equipo y fijar el cero de absorbancia.':nM<5?'Haz clic en las celdas de los Estándares 1 a 5 en la gradilla (o usa «Medir todos los estándares») para introducirlas en el espectrofotómetro y observar su espectro en el monitor.':smp.reps.some(Number.isFinite)?'¡Todas las celdas y la muestra fueron medidas! Observa las curvas superpuestas abajo y pasa a «4. Analizar curva».':'Ahora haz clic en la celda «Muestra problema» o en «🧪 Medir muestra problema» para medir la incógnita en el equipo.',
+    analisis:f?'Inspecciona la recta de calibración, las bandas de confianza del 95 por ciento y revela el valor verdadero de la muestra problema.':'Mide al menos 3 estándares en «3. Medir en espectrofotómetro» para construir la curva.',
+    criterios:'Revisa el cumplimiento de los 11 criterios de calidad óptica y estadística.'
+  };
+  $('guide').innerHTML=`<div><b>Guía paso a paso:</b> ${M[cur]}</div><div class="track">${T}</div>`;
+}
+
+$('btnShareHelp').onclick=()=>{
+  const box=$('shareHelpBox');
+  box.hidden=!box.hidden;
+};
+
+$('btnDownloadApp').onclick=()=>{
+  const prevCur=cur;
+  const hadMeas=lv.slice(1).some(l=>l.reps.length>0);
+  if(!hadMeas){
+    ensureCuvettesReady();
+    blank=sig(0);lv[0].reps=[blank];
+    lv.slice(1).forEach((l,i)=>mLevel(l,i+1));
+    while(smp.reps.filter(Number.isFinite).length<3)smp.reps.push(sig(smp.t));
+  }
+  renderPrep();buildBench();drawStage();
+  renderSpecControls();renderRack();drawSpec();table();
+  analysis();controlsView();
+  go('inicio');
+
+  const clone=document.documentElement.cloneNode(true);
+  const helpBox=clone.querySelector('#shareHelpBox');
+  if(helpBox)helpBox.setAttribute('hidden','');
+  const jsWarn=clone.querySelector('#jsBlockedBanner');
+  if(jsWarn)jsWarn.removeAttribute('hidden');
+  const htmlContent='\uFEFF<!doctype html>\n'+clone.outerHTML;
+
+  if(!hadMeas)configure();
+  go(prevCur);
+
+  const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='Simulador_Laboratorio_Lilibet.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+};
+
+$('configure').onclick=()=>{configure();go('preparacion')};
+$('analyte').onchange();go('inicio');
+</script>
+</body>
+</html>
